@@ -1,0 +1,75 @@
+// Slice 7 · KPI scorecard — chrome strings (AC-UNI-07: no key/placeholder visible)
+const T={en:{
+ reg:'registry v1.2',
+ console:'KPI scorecard', consoleSub:'Console · role-scoped · live from workforce data · C3',
+ ess:'My KPIs', essSub:'ESS · your personal metrics · E8',
+ // rag / status
+ stOn:'On track', stWatch:'Watch', stOff:'Off track', stMon:'Monitor', stNa:'N/A',
+ sumOn:'On track', sumWatch:'Watch', sumOff:'Off track', sumNa:'Not available',
+ // card labels
+ kFormula:'Formula', kTarget:'Target', naCard:'Not available', naBecause:'not provided',
+ scopeLbl:'Scope',
+ // categories
+ cat_workforce:'Workforce', cat_diversity:'Diversity & Inclusion', cat_grievances:'Grievances',
+ cat_disciplinary:'Disciplinary', cat_leave:'Leave & Attendance', cat_recruitment:'Recruitment',
+ cat_talent:'Talent Management', cat_performance:'Performance', cat_learning:'Learning & Development',
+ cat_engagement:'Engagement', cat_compliance:'Compliance',
+ // notes
+ liveNote:'Computed live from the workforce data — headcount, attendance, leave, disciplinary and training (slices 2–6).',
+ lvrNote:'Populations exclude leavers (LVR-02).',
+ naRule:'A KPI missing an input shows Not available with the input named — never a guessed or zero figure (LIAB-03).',
+ consistNote:'On / Watch / Off counts match the cards shown; Not-available and Monitor are excluded from the counts.',
+ // states
+ emptyTitle:'No KPIs in scope', emptyBody:'No metrics are assigned to this view yet. Once a period and role set are configured, cards appear here.',
+ loadingTitle:'Computing metrics…',
+ successTitle:'Scorecard snapshot published', successSub:'Saved to the period and shared to the dashboard. Values are frozen at this snapshot.',
+ errTitle:'Metrics could not be computed', errBody:'The scorecard is unavailable for this period. No values are shown rather than guessed ones (LIAB-03). Retry when the data source is back.',
+ noPermTitle:'KPI console is for management roles', noPermBody:'The console scorecard is scoped to management, HR and finance roles (A2/A3). Your metrics are on the mobile app under My KPIs.', noPermWhy:'A2/A3 · console scope · viewer',
+ offlineNote:'Offline — showing the last computed snapshot. Live values recompute on reconnect.',
+ naStateTitle:'Some inputs are missing',
+ naStateBody:'Several KPIs cannot compute because a data input has not been supplied. Each names the missing input and shows Not available — never a guessed or zero value (LIAB-03). Available KPIs still compute and count normally.',
+ // large-data
+ fullCatTitle:'Full KPI catalogue', fullCatMeta:'all 30 KPIs · 1,246-staff population · virtualised',
+ // feature-flag-off (whole module disabled)
+ foTag:'Module disabled',
+ foTitle:'KPI scorecard is turned off',
+ foBody:'This tenant does not have the KPI module enabled. The scorecard is switched off entirely — no metrics are computed and no cards are shown. This is different from having no KPIs assigned yet.',
+ foProv:'Enable the KPI module in',
+ foProvPath:'Provisioning · C21',
+ foWhy:'Feature flag KPI_MODULE = off · tenant-level',
+ retry:'Retry', close:'Close', myScope:'your personal metrics'
+},
+sw:{
+ reg:'rejista v1.2',
+ console:'Kadi ya KPI', consoleSub:'Konsoli · kwa jukumu · moja kwa moja kutoka data · C3',
+ ess:'KPI Zangu', essSub:'ESS · takwimu zako binafsi · E8',
+ stOn:'Kwenye lengo', stWatch:'Angalia', stOff:'Nje ya lengo', stMon:'Fuatilia', stNa:'Haipatikani',
+ sumOn:'Kwenye lengo', sumWatch:'Angalia', sumOff:'Nje ya lengo', sumNa:'Haipatikani',
+ kFormula:'Fomula', kTarget:'Lengo', naCard:'Haipatikani', naBecause:'haijatolewa',
+ scopeLbl:'Wigo',
+ cat_workforce:'Nguvu kazi', cat_diversity:'Uwiano & Ujumuishi', cat_grievances:'Malalamiko',
+ cat_disciplinary:'Nidhamu', cat_leave:'Likizo & Mahudhurio', cat_recruitment:'Ajira',
+ cat_talent:'Usimamizi wa vipaji', cat_performance:'Utendaji', cat_learning:'Kujifunza & Maendeleo',
+ cat_engagement:'Ushirikishwaji', cat_compliance:'Uzingatiaji',
+ liveNote:'Imekokotolewa moja kwa moja kutoka data ya nguvu kazi — idadi, mahudhurio, likizo, nidhamu na mafunzo (slice 2–6).',
+ lvrNote:'Idadi haijumuishi walioondoka (LVR-02).',
+ naRule:'KPI isiyo na kipengele inaonyesha Haipatikani na jina la kipengele — kamwe si nambari ya kubuni au sifuri (LIAB-03).',
+ consistNote:'Hesabu za Kwenye lengo / Angalia / Nje ya lengo zinalingana na kadi zinazoonyeshwa; Haipatikani na Fuatilia hazihesabiwi.',
+ emptyTitle:'Hakuna KPI kwenye wigo', emptyBody:'Hakuna takwimu zilizopangwa kwa mwonekano huu bado. Kipindi na jukumu vikipangwa, kadi zitaonekana hapa.',
+ loadingTitle:'Inakokotoa takwimu…',
+ successTitle:'Muhtasari wa kadi umechapishwa', successSub:'Umehifadhiwa kwa kipindi na kushirikishwa kwenye dashibodi. Thamani zimegandishwa kwa muhtasari huu.',
+ errTitle:'Takwimu hazikuweza kukokotolewa', errBody:'Kadi haipatikani kwa kipindi hiki. Hakuna thamani zinazoonyeshwa badala ya za kubuni (LIAB-03). Jaribu tena chanzo cha data kikirejea.',
+ noPermTitle:'Konsoli ya KPI ni kwa majukumu ya uongozi', noPermBody:'Kadi ya konsoli ni kwa majukumu ya uongozi, HR na fedha (A2/A3). Takwimu zako ziko kwenye programu ya simu chini ya KPI Zangu.', noPermWhy:'A2/A3 · wigo wa konsoli · mtazamaji',
+ offlineNote:'Nje ya mtandao — inaonyesha muhtasari wa mwisho uliokokotolewa. Thamani hai zitakokotolewa upya ukirejea.',
+ naStateTitle:'Baadhi ya vipengele havipo',
+ naStateBody:'KPI kadhaa haziwezi kukokotolewa kwa sababu kipengele cha data hakijatolewa. Kila moja inataja kipengele kilichokosekana na kuonyesha Haipatikani — kamwe si thamani ya kubuni au sifuri (LIAB-03). KPI zilizopo bado zinakokotolewa na kuhesabiwa kawaida.',
+ fullCatTitle:'Katalogi kamili ya KPI', fullCatMeta:'KPI zote 30 · idadi ya wafanyakazi 1,246 · imepunguzwa',
+ foTag:'Moduli imezimwa',
+ foTitle:'Kadi ya KPI imezimwa',
+ foBody:'Mteja huyu hana moduli ya KPI iliyowashwa. Kadi imezimwa kabisa — hakuna takwimu zinazokokotolewa wala kadi zinazoonyeshwa. Hii ni tofauti na kutokuwa na KPI zilizopangwa bado.',
+ foProv:'Washa moduli ya KPI katika',
+ foProvPath:'Utoaji · C21',
+ foWhy:'Kilamba KPI_MODULE = imezimwa · ngazi ya mteja',
+ retry:'Jaribu tena', close:'Funga', myScope:'takwimu zako binafsi'
+}};
+window.T=T;
