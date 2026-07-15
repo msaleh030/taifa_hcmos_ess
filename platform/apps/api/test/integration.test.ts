@@ -147,6 +147,20 @@ describe.skipIf(!run)("HCMOS API integration", () => {
     );
   });
 
+  it("rejects refresh for a disabled account and revokes its tokens (CWE-613)", async () => {
+    const email = "employee@taifamining.tz"; // R01, no MFA → login returns tokens directly
+    const login = (await post("/api/auth/login", { tenantSlug: "taifa", email, password: "Passw0rd!" })).json();
+    expect(login.status).toBe("ok");
+
+    // Disable the account out-of-band (as an admin would on termination).
+    await admin.$executeRawUnsafe("UPDATE app_user SET disabled=true WHERE email=$1", email);
+    const refresh = await post("/api/auth/refresh", { refreshToken: login.refreshToken });
+    expect(refresh.statusCode).toBe(401);
+
+    // Re-enable so the fixture is clean for reruns.
+    await admin.$executeRawUnsafe("UPDATE app_user SET disabled=false WHERE email=$1", email);
+  });
+
   it("computes ELRA severance via the labour endpoint", async () => {
     const payroll = await fullLogin("payroll@taifamining.tz");
     const res = (await post("/api/labour/severance", { basicMonthly: 1_300_000, monthsService: 60 }, payroll)).json();

@@ -132,6 +132,16 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         });
         return false;
       }
+      // Re-check account status: a disabled/terminated user must not be able to
+      // keep minting access tokens off an already-issued refresh token (CWE-613).
+      const user = await tx.user.findUnique({ where: { id: row.userId }, select: { disabled: true } });
+      if (!user || user.disabled) {
+        await tx.refreshToken.updateMany({
+          where: { userId: row.userId, revokedAt: null },
+          data: { revokedAt: new Date() },
+        });
+        return false;
+      }
       await tx.refreshToken.update({ where: { id: row.id }, data: { revokedAt: new Date() } });
       return true;
     });
