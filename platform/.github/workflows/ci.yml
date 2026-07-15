@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: platform
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hcmos
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DIRECT_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/hcmos?schema=public
+      # Runtime role is created by the migration; CI uses it for the app URL.
+      DATABASE_URL: postgresql://hcmos_app:change-me@localhost:5432/hcmos?schema=public
+      JWT_ACCESS_SECRET: ci-access-secret-0123456789
+      JWT_REFRESH_SECRET: ci-refresh-secret-0123456789
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: platform/pnpm-lock.yaml
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter @hcmos/db generate
+
+      - name: Build packages
+        run: pnpm -r --filter "./packages/*" build
+
+      - name: Typecheck
+        run: pnpm -r typecheck
+
+      - name: Unit tests
+        run: pnpm -r test
+
+      - name: Apply migrations (RLS + audit chain)
+        run: pnpm --filter @hcmos/db migrate:deploy
+
+      - name: Seed
+        run: pnpm --filter @hcmos/db seed
+
+      - name: Build web
+        run: pnpm --filter @hcmos/web build
+
+  docker:
+    needs: build-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build API image
+        run: docker build -f platform/apps/api/Dockerfile -t hcmos-api:ci platform
+      - name: Build web image
+        run: docker build -f platform/apps/web/Dockerfile -t hcmos-web:ci platform

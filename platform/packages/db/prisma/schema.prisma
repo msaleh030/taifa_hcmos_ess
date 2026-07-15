@@ -1,0 +1,208 @@
+// HCMOS data model. Source of truth for the Prisma client and TypeScript types.
+// The DB itself is created by the SQL migrations under prisma/migrations, which
+// additionally enable per-tenant row-level security and the audit-chain trigger
+// (Prisma does not model RLS). Keep this schema and the SQL in agreement.
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  // Runtime connection — the non-owner `hcmos_app` role, which RLS is enforced against.
+  url = env("DATABASE_URL")
+  // Migrations/introspection connect as the owner/admin, which bypasses RLS to run DDL and seed.
+  directUrl = env("DIRECT_DATABASE_URL")
+}
+
+model Tenant {
+  id        String   @id @default(uuid()) @db.Uuid
+  slug      String   @unique
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  users        User[]
+  employees    Employee[]
+  departments  Department[]
+  payrollRuns  PayrollRun[]
+  auditEvents  AuditEvent[]
+  exactConn    ExactConnection?
+
+  @@map("tenant")
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  email        String
+  passwordHash String   @map("password_hash")
+  displayName  String   @map("display_name")
+  mfaSecret    String?  @map("mfa_secret")
+  mfaEnabled   Boolean  @default(false) @map("mfa_enabled")
+  disabled     Boolean  @default(false)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  roles         UserRole[]
+  refreshTokens RefreshToken[]
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+  @@map("app_user")
+}
+
+model UserRole {
+  userId   String @map("user_id") @db.Uuid
+  tenantId String @map("tenant_id") @db.Uuid
+  roleCode String @map("role_code")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleCode])
+  @@index([tenantId])
+  @@map("user_role")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tenantId  String    @map("tenant_id") @db.Uuid
+  tokenHash String    @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tenantId])
+  @@map("refresh_token")
+}
+
+model Department {
+  id       String  @id @default(uuid()) @db.Uuid
+  tenantId String  @map("tenant_id") @db.Uuid
+  name     String
+  parentId String? @map("parent_id") @db.Uuid
+
+  tenant    Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  parent    Department?  @relation("DeptTree", fields: [parentId], references: [id])
+  children  Department[] @relation("DeptTree")
+  employees Employee[]
+
+  @@index([tenantId])
+  @@map("department")
+}
+
+model Employee {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  employeeNo   String   @map("employee_no")
+  firstName    String   @map("first_name")
+  lastName     String   @map("last_name")
+  jobTitle     String   @map("job_title")
+  locationCode String   @map("location_code")
+  departmentId String?  @map("department_id") @db.Uuid
+  contractType String   @map("contract_type")
+  status       String   @default("active")
+  startDate    DateTime @map("start_date") @db.Date
+
+  // Confidential columns — surfaced only to holders of employee:read:confidential.
+  basicSalary  Int?    @map("basic_salary")
+  bankAccount  String? @map("bank_account")
+  nationalId   String? @map("national_id")
+  medicalNotes String? @map("medical_notes")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  department Department? @relation(fields: [departmentId], references: [id])
+  payslips   Payslip[]
+
+  @@unique([tenantId, employeeNo])
+  @@index([tenantId])
+  @@index([tenantId, departmentId])
+  @@map("employee")
+}
+
+model PayrollRun {
+  id         String    @id @default(uuid()) @db.Uuid
+  tenantId   String    @map("tenant_id") @db.Uuid
+  period     String // YYYY-MM
+  status     String    @default("draft") // draft | run | approved | cancelled
+  tableId    String    @map("table_id")
+  createdBy  String    @map("created_by") @db.Uuid
+  approvedBy String?   @map("approved_by") @db.Uuid
+  grossTotal BigInt    @default(0) @map("gross_total")
+  netTotal   BigInt    @default(0) @map("net_total")
+  statTotal  BigInt    @default(0) @map("stat_total")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  approvedAt DateTime? @map("approved_at")
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  payslips Payslip[]
+
+  @@unique([tenantId, period])
+  @@index([tenantId])
+  @@map("payroll_run")
+}
+
+model Payslip {
+  id             String @id @default(uuid()) @db.Uuid
+  tenantId       String @map("tenant_id") @db.Uuid
+  runId          String @map("run_id") @db.Uuid
+  employeeId     String @map("employee_id") @db.Uuid
+  gross          Int
+  nssfEmployee   Int    @map("nssf_employee")
+  paye           Int
+  netPay         Int    @map("net_pay")
+  employerTotal  Int    @map("employer_total")
+  statutoryTotal Int    @map("statutory_total")
+
+  run      PayrollRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  employee Employee   @relation(fields: [employeeId], references: [id])
+
+  @@index([tenantId])
+  @@index([runId])
+  @@map("payslip")
+}
+
+// Append-only, hash-chained audit log. Ordering and hashing are enforced by a
+// BEFORE INSERT trigger (see migration) so the chain cannot be forged from the
+// application layer. UPDATE/DELETE are revoked from the app role.
+model AuditEvent {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  // seq / prevHash / hash are assigned by the BEFORE INSERT trigger; these
+  // app-side defaults exist only so Prisma does not require them on create.
+  seq         BigInt   @default(0)
+  actorUserId String?  @map("actor_user_id") @db.Uuid
+  action      String
+  entity      String
+  entityId    String?  @map("entity_id")
+  data        Json?
+  prevHash    String   @default("") @map("prev_hash")
+  hash        String   @default("")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, seq])
+  @@index([tenantId])
+  @@map("audit_event")
+}
+
+model ExactConnection {
+  tenantId     String   @id @map("tenant_id") @db.Uuid
+  accessToken  String?  @map("access_token")
+  refreshToken String?  @map("refresh_token")
+  expiresAt    DateTime? @map("expires_at")
+  division     String?
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("exact_connection")
+}

@@ -1,0 +1,67 @@
+# HCMOS production stack for a single Hostinger VPS.
+#   - db:  PostgreSQL 16 (data persisted in a named volume)
+#   - api: Fastify, runs migrations at boot, serves /api
+#   - web: nginx serving the SPA and proxying /api → api
+# Edge TLS (Let's Encrypt for taifamining.tz) is handled by the host nginx in
+# infra/nginx, which proxies to the `web` container's published port.
+
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-hcmos}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Not published to the host — only reachable inside the compose network.
+    expose:
+      - "5432"
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      API_PORT: "4000"
+      API_HOST: 0.0.0.0
+      WEB_ORIGIN: ${WEB_ORIGIN:-https://taifamining.tz}
+      # App connects as the RLS-enforced hcmos_app role.
+      DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL (hcmos_app role)}
+      # Migrations connect as the owner/admin role.
+      DIRECT_DATABASE_URL: ${DIRECT_DATABASE_URL:?set DIRECT_DATABASE_URL (owner role)}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?set JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?set JWT_REFRESH_SECRET}
+      MFA_ISSUER: ${MFA_ISSUER:-HCMOS}
+      EXACT_BASE_URL: ${EXACT_BASE_URL:-https://start.exactonline.nl}
+      EXACT_CLIENT_ID: ${EXACT_CLIENT_ID:-}
+      EXACT_CLIENT_SECRET: ${EXACT_CLIENT_SECRET:-}
+      EXACT_REDIRECT_URI: ${EXACT_REDIRECT_URI:-}
+      EXACT_DIVISION: ${EXACT_DIVISION:-}
+    expose:
+      - "4000"
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - api
+    # Published to localhost only; the host nginx terminates TLS and proxies here.
+    ports:
+      - "127.0.0.1:8080:80"
+
+volumes:
+  pgdata:
