@@ -37,6 +37,20 @@ export function verifyRefresh(token: string): RefreshClaims {
   return decoded;
 }
 
+/**
+ * Restricted token for mandatory MFA enrollment: no roles/permissions, so every
+ * data route rejects it. Lets the holder call only the enroll endpoints, then
+ * re-authenticate through the full MFA flow.
+ */
+export function signSetupToken(userId: string, tenantId: string): string {
+  const env = loadEnv();
+  return jwt.sign(
+    { sub: userId, tid: tenantId, roles: [], perms: [], mfaPending: true, typ: "access" } satisfies AccessClaims,
+    env.JWT_ACCESS_SECRET,
+    { expiresIn: "10m" },
+  );
+}
+
 /** Short-lived token issued between first factor and MFA verification. */
 export function signMfaChallenge(userId: string, tenantId: string): string {
   const env = loadEnv();

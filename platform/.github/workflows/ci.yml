@@ -71,6 +71,9 @@ jobs:
       - name: Seed
         run: pnpm --filter @hcmos/db seed
 
+      - name: Integration tests (RLS, MFA, SoD, audit against real Postgres)
+        run: RUN_DB_TESTS=1 pnpm --filter @hcmos/api test
+
       - name: Build web
         run: pnpm --filter @hcmos/web build
 

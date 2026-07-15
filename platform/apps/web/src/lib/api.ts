@@ -74,6 +74,7 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}, retry = 
 // ── Typed endpoints ────────────────────────────────────────────────────────
 export type LoginResponse =
   | { status: "mfa_required"; mfaToken: string }
+  | { status: "mfa_setup_required"; setupToken: string }
   | { status: "ok"; accessToken: string; refreshToken: string; user: SessionUser };
 
 export const api = {
@@ -87,6 +88,18 @@ export const api = {
       "/auth/mfa/verify",
       { method: "POST", body: JSON.stringify({ mfaToken, code }) },
     ),
+  // MFA enrollment uses the restricted setup token as the bearer.
+  mfaEnroll: (setupToken: string) =>
+    apiFetch<{ secret: string; otpauthUri: string }>("/auth/mfa/enroll", {
+      method: "POST",
+      headers: { authorization: `Bearer ${setupToken}` },
+    }),
+  mfaEnrollVerify: (setupToken: string, code: string) =>
+    apiFetch<{ status: string; mfaEnabled: boolean }>("/auth/mfa/enroll/verify", {
+      method: "POST",
+      headers: { authorization: `Bearer ${setupToken}` },
+      body: JSON.stringify({ code }),
+    }),
   me: () => apiFetch<SessionUser>("/auth/me"),
   logout: () => apiFetch<{ status: string }>("/auth/logout", { method: "POST" }),
   employees: () => apiFetch<{ data: EmployeeDto[] }>("/employees"),

@@ -124,5 +124,15 @@ export function isReadonlyRole(code: RoleCode): boolean {
   return ROLES[code]?.readonly ?? false;
 }
 
+/**
+ * Roles for which MFA is mandatory. Privileged access to confidential data,
+ * payroll, audit or tenant administration must be behind a second factor.
+ */
+export const MFA_REQUIRED_ROLES: RoleCode[] = ["R06", "R08", "R09", "R10", "R12", "R13"];
+
+export function requiresMfa(roles: RoleCode[]): boolean {
+  return roles.some((r) => MFA_REQUIRED_ROLES.includes(r));
+}
+
 export const IS_ROLE_CODE = (v: unknown): v is RoleCode =>
   typeof v === "string" && (ROLE_CODES as readonly string[]).includes(v);

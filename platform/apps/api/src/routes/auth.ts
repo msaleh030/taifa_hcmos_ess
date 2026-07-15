@@ -1,38 +1,94 @@
 import type { FastifyInstance } from "fastify";
 import { authLookup, withTenant } from "@hcmos/db";
-import { loginSchema, mfaVerifySchema, refreshSchema, mfaEnrollVerifySchema } from "@hcmos/shared";
+import {
+  loginSchema,
+  mfaVerifySchema,
+  refreshSchema,
+  mfaEnrollVerifySchema,
+  requiresMfa,
+  type RoleCode,
+} from "@hcmos/shared";
 import { verifyPassword } from "@hcmos/shared/password";
 import { issueSession, sha256 } from "../lib/session.js";
-import { signMfaChallenge, verifyMfaChallenge, verifyRefresh } from "../lib/jwt.js";
+import { signMfaChallenge, signSetupToken, verifyMfaChallenge, verifyRefresh } from "../lib/jwt.js";
 import { generateMfaSecret, mfaKeyUri, verifyTotp } from "../lib/mfa.js";
 import { audit } from "../lib/audit.js";
 
+const MAX_FAILED = 5;
+const LOCK_MS = 15 * 60 * 1000;
+// Dummy hash so a nonexistent account still costs a scrypt verify (anti-enumeration).
+const DUMMY_HASH = "scrypt$16384$8$1$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+
+// Stricter per-route limit on credential endpoints (in addition to the global
+// cap). Relaxed under NODE_ENV=test so integration suites aren't throttled.
+const authRateLimit = {
+  config: { rateLimit: { max: process.env.NODE_ENV === "test" ? 100_000 : 10, timeWindow: "1 minute" } },
+};
+
 export async function authRoutes(app: FastifyInstance): Promise<void> {
-  // First factor.
-  app.post("/auth/login", async (req, reply) => {
+  // First factor, with account lockout and mandatory-MFA enforcement.
+  app.post("/auth/login", authRateLimit, async (req, reply) => {
     const parsed = loginSchema.safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: "bad_request", message: "Invalid login" });
     const { tenantSlug, email, password } = parsed.data;
 
-    const row = await authLookup(tenantSlug, email);
-    // Constant-ish: still run a verify to reduce user-enumeration timing signal.
-    const ok = row ? verifyPassword(password, row.password_hash) : verifyPassword(password, "scrypt$16384$8$1$x$x");
-    if (!row || row.disabled || !ok) {
+    const boot = await authLookup(tenantSlug, email);
+    if (!boot) {
+      verifyPassword(password, DUMMY_HASH); // constant-ish timing
       return reply.code(401).send({ error: "unauthorized", message: "Invalid credentials" });
     }
 
-    if (row.mfa_enabled) {
-      return reply.send({ status: "mfa_required", mfaToken: signMfaChallenge(row.user_id, row.tenant_id) });
+    const outcome = await withTenant(boot.tenant_id, async (tx) => {
+      const user = await tx.user.findUnique({ where: { id: boot.user_id }, include: { roles: true } });
+      if (!user || user.disabled) return { kind: "invalid" as const };
+      if (user.lockedUntil && user.lockedUntil > new Date()) {
+        return { kind: "locked" as const, until: user.lockedUntil };
+      }
+      if (!verifyPassword(password, user.passwordHash)) {
+        const attempts = user.failedAttempts + 1;
+        const lock = attempts >= MAX_FAILED;
+        await tx.user.update({
+          where: { id: user.id },
+          data: { failedAttempts: lock ? 0 : attempts, lockedUntil: lock ? new Date(Date.now() + LOCK_MS) : null },
+        });
+        if (lock) {
+          await audit(tx, boot.tenant_id, { actorUserId: user.id, action: "auth.lockout", entity: "user", entityId: user.id });
+        }
+        return { kind: "invalid" as const };
+      }
+      // Success — reset the counter.
+      if (user.failedAttempts !== 0 || user.lockedUntil) {
+        await tx.user.update({ where: { id: user.id }, data: { failedAttempts: 0, lockedUntil: null } });
+      }
+      return {
+        kind: "ok" as const,
+        mfaEnabled: user.mfaEnabled,
+        roleCodes: user.roles.map((r) => r.roleCode as RoleCode),
+      };
+    });
+
+    if (outcome.kind === "locked") {
+      return reply.code(423).send({ error: "locked", message: "Account temporarily locked. Try again later." });
     }
-    const session = await issueSession(row.user_id, row.tenant_id);
-    await withTenant(row.tenant_id, (tx) =>
-      audit(tx, row.tenant_id, { actorUserId: row.user_id, action: "auth.login", entity: "user", entityId: row.user_id }),
+    if (outcome.kind === "invalid") {
+      return reply.code(401).send({ error: "unauthorized", message: "Invalid credentials" });
+    }
+    if (outcome.mfaEnabled) {
+      return reply.send({ status: "mfa_required", mfaToken: signMfaChallenge(boot.user_id, boot.tenant_id) });
+    }
+    // Privileged roles must enroll MFA before they get a usable session.
+    if (requiresMfa(outcome.roleCodes)) {
+      return reply.send({ status: "mfa_setup_required", setupToken: signSetupToken(boot.user_id, boot.tenant_id) });
+    }
+    const session = await issueSession(boot.user_id, boot.tenant_id);
+    await withTenant(boot.tenant_id, (tx) =>
+      audit(tx, boot.tenant_id, { actorUserId: boot.user_id, action: "auth.login", entity: "user", entityId: boot.user_id }),
     );
     return reply.send({ status: "ok", ...session });
   });
 
   // Second factor.
-  app.post("/auth/mfa/verify", async (req, reply) => {
+  app.post("/auth/mfa/verify", authRateLimit, async (req, reply) => {
     const parsed = mfaVerifySchema.safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: "bad_request", message: "Invalid input" });
     let challenge: { sub: string; tid: string };
@@ -69,8 +125,11 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       const row = await tx.refreshToken.findUnique({ where: { id: claims.jti } });
       if (!row || row.revokedAt || row.expiresAt < new Date()) return false;
       if (row.tokenHash !== sha256(parsed.data.refreshToken)) {
-        // Token reuse / mismatch — revoke defensively.
-        await tx.refreshToken.update({ where: { id: row.id }, data: { revokedAt: new Date() } });
+        // Token reuse / mismatch — revoke the whole family for this user.
+        await tx.refreshToken.updateMany({
+          where: { userId: row.userId, revokedAt: null },
+          data: { revokedAt: new Date() },
+        });
         return false;
       }
       await tx.refreshToken.update({ where: { id: row.id }, data: { revokedAt: new Date() } });

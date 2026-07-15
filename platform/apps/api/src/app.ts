@@ -7,6 +7,7 @@ import { authPlugin } from "./plugins/auth.js";
 import { authRoutes } from "./routes/auth.js";
 import { employeeRoutes } from "./routes/employees.js";
 import { payrollRoutes } from "./routes/payroll.js";
+import { labourRoutes } from "./routes/labour.js";
 import { auditRoutes } from "./routes/audit.js";
 import { integrationRoutes } from "./routes/integrations.js";
 
@@ -19,7 +20,10 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   await app.register(helmet, { contentSecurityPolicy: false });
   await app.register(cors, { origin: corsOrigins(env), credentials: true });
-  await app.register(rateLimit, { max: 300, timeWindow: "1 minute" });
+  await app.register(rateLimit, {
+    max: env.NODE_ENV === "test" ? 1_000_000 : 300,
+    timeWindow: "1 minute",
+  });
   await app.register(authPlugin);
 
   app.get("/health", async () => ({ status: "ok", ts: new Date().toISOString() }));
@@ -29,6 +33,7 @@ export async function buildApp(): Promise<FastifyInstance> {
       await authRoutes(api);
       await employeeRoutes(api);
       await payrollRoutes(api);
+      await labourRoutes(api);
       await auditRoutes(api);
       await integrationRoutes(api);
     },

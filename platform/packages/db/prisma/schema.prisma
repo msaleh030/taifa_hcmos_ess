@@ -38,10 +38,12 @@ model User {
   email        String
   passwordHash String   @map("password_hash")
   displayName  String   @map("display_name")
-  mfaSecret    String?  @map("mfa_secret")
-  mfaEnabled   Boolean  @default(false) @map("mfa_enabled")
-  disabled     Boolean  @default(false)
-  createdAt    DateTime @default(now()) @map("created_at")
+  mfaSecret      String?   @map("mfa_secret")
+  mfaEnabled     Boolean   @default(false) @map("mfa_enabled")
+  disabled       Boolean   @default(false)
+  failedAttempts Int       @default(0) @map("failed_attempts")
+  lockedUntil    DateTime? @map("locked_until")
+  createdAt      DateTime  @default(now()) @map("created_at")
 
   tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   roles         UserRole[]

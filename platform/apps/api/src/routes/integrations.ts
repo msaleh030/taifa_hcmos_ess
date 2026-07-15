@@ -34,8 +34,13 @@ export async function integrationRoutes(app: FastifyInstance): Promise<void> {
     { preHandler: [app.authenticate, app.requirePermission("integration:manage")] },
     async (req, reply) => {
       const auth = req.auth as RequestAuth;
-      const { code } = req.query as { code?: string };
+      const { code, state } = req.query as { code?: string; state?: string };
       if (!code) return reply.code(400).send({ error: "bad_request", message: "Missing code" });
+      // CSRF: the state issued by /connect is bound to the tenant; reject a
+      // callback whose state does not match the authenticated tenant.
+      if (state !== auth.tenantId) {
+        return reply.code(400).send({ error: "bad_request", message: "State mismatch" });
+      }
       const adapter = getExactAdapter();
       await adapter.handleCallback(auth.tenantId, code);
       await withTenant(auth.tenantId, (tx) =>

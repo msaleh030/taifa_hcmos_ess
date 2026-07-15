@@ -25,6 +25,7 @@ export const refreshSchema = z.object({
 /** Result of a first-factor login. */
 export type LoginResult =
   | { status: "mfa_required"; mfaToken: string }
+  | { status: "mfa_setup_required"; setupToken: string }
   | { status: "ok"; accessToken: string; refreshToken: string; user: SessionUser };
 
 export interface SessionUser {
@@ -45,4 +46,9 @@ export interface AccessClaims {
   roles: string[];
   perms: string[];
   typ: "access";
+  /**
+   * True for a restricted "MFA setup" token: it carries no roles/permissions, so
+   * every data route rejects it — the holder can only enroll MFA, then re-login.
+   */
+  mfaPending?: boolean;
 }

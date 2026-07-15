@@ -98,17 +98,56 @@ class LiveExactAdapter implements ExactAdapter {
     );
   }
 
-  async postPayrollJournal(tenantId: string, journal: PayrollJournal): Promise<{ remoteId: string }> {
+  /**
+   * Ensure a non-expired access token, refreshing via the refresh_token grant
+   * when it is within 60s of expiry. Persists the rotated tokens. Returns the
+   * usable access token + division, or throws if the tenant is not connected.
+   */
+  private async ensureToken(tenantId: string): Promise<{ accessToken: string; division: string }> {
     const env = loadEnv();
     const conn = await withTenant(tenantId, (tx) => tx.exactConnection.findUnique({ where: { tenantId } }));
-    if (!conn?.accessToken || !conn.division) throw new Error("Exact not connected for tenant");
+    if (!conn?.accessToken || !conn.refreshToken || !conn.division) {
+      throw new Error("Exact not connected for tenant");
+    }
+    const fresh = conn.expiresAt && conn.expiresAt.getTime() - Date.now() > 60_000;
+    if (fresh) return { accessToken: conn.accessToken, division: conn.division };
+
+    const body = new URLSearchParams({
+      grant_type: "refresh_token",
+      client_id: env.EXACT_CLIENT_ID,
+      client_secret: env.EXACT_CLIENT_SECRET,
+      refresh_token: conn.refreshToken,
+    });
+    const res = await fetch(`${env.EXACT_BASE_URL}/api/oauth2/token`, {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body,
+    });
+    if (!res.ok) throw new Error(`Exact token refresh failed: ${res.status}`);
+    const tok = (await res.json()) as { access_token: string; refresh_token: string; expires_in: number };
+    await withTenant(tenantId, (tx) =>
+      tx.exactConnection.update({
+        where: { tenantId },
+        data: {
+          accessToken: tok.access_token,
+          refreshToken: tok.refresh_token,
+          expiresAt: new Date(Date.now() + tok.expires_in * 1000),
+        },
+      }),
+    );
+    return { accessToken: tok.access_token, division: conn.division };
+  }
+
+  async postPayrollJournal(tenantId: string, journal: PayrollJournal): Promise<{ remoteId: string }> {
+    const env = loadEnv();
+    const { accessToken, division } = await this.ensureToken(tenantId);
     // NOTE: endpoint + payload shape are indicative; validate against Exact docs.
     const res = await fetch(
-      `${env.EXACT_BASE_URL}/api/v1/${conn.division}/generaljournalentry/GeneralJournalEntries`,
+      `${env.EXACT_BASE_URL}/api/v1/${division}/generaljournalentry/GeneralJournalEntries`,
       {
         method: "POST",
         headers: {
-          authorization: `Bearer ${conn.accessToken}`,
+          authorization: `Bearer ${accessToken}`,
           "content-type": "application/json",
           accept: "application/json",
         },

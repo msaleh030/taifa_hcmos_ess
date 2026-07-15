@@ -8,6 +8,8 @@ export interface RequestAuth {
   tenantId: string;
   roles: string[];
   permissions: Set<Permission>;
+  /** True when the token is an MFA-setup token (no data access). */
+  mfaPending: boolean;
 }
 
 declare module "fastify" {
@@ -36,6 +38,7 @@ export const authPlugin = fp(async function authPlugin(app: FastifyInstance) {
         tenantId: claims.tid,
         roles: claims.roles,
         permissions: new Set(claims.perms as Permission[]),
+        mfaPending: claims.mfaPending === true,
       };
     } catch {
       await reply.code(401).send({ error: "unauthorized", message: "Invalid or expired token" });
