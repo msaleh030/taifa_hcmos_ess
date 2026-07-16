@@ -10,6 +10,9 @@ import { payrollRoutes } from "./routes/payroll.js";
 import { labourRoutes } from "./routes/labour.js";
 import { leaveRoutes } from "./routes/leave.js";
 import { attendanceRoutes } from "./routes/attendance.js";
+import { performanceRoutes } from "./routes/performance.js";
+import { orgRoutes } from "./routes/org.js";
+import { hseqRoutes } from "./routes/hseq.js";
 import { auditRoutes } from "./routes/audit.js";
 import { integrationRoutes } from "./routes/integrations.js";
 
@@ -38,6 +41,9 @@ export async function buildApp(): Promise<FastifyInstance> {
       await labourRoutes(api);
       await leaveRoutes(api);
       await attendanceRoutes(api);
+      await performanceRoutes(api);
+      await orgRoutes(api);
+      await hseqRoutes(api);
       await auditRoutes(api);
       await integrationRoutes(api);
     },

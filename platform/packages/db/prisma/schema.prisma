@@ -31,6 +31,11 @@ model Tenant {
   leaveRequests LeaveRequest[]
   leaveBalances LeaveBalance[]
   attendance    AttendanceRecord[]
+  reviews       PerformanceReview[]
+  incidents     HseqIncident[]
+  ppeIssues     PpeIssue[]
+  medicals      MedicalRecord[]
+  training      TrainingRecord[]
 
   @@map("tenant")
 }
@@ -88,14 +93,17 @@ model RefreshToken {
 }
 
 model Department {
-  id       String  @id @default(uuid()) @db.Uuid
-  tenantId String  @map("tenant_id") @db.Uuid
-  name     String
-  parentId String? @map("parent_id") @db.Uuid
+  id        String  @id @default(uuid()) @db.Uuid
+  tenantId  String  @map("tenant_id") @db.Uuid
+  name      String
+  code      String?
+  parentId  String? @map("parent_id") @db.Uuid
+  managerId String? @map("manager_id") @db.Uuid
 
   tenant    Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   parent    Department?  @relation("DeptTree", fields: [parentId], references: [id])
   children  Department[] @relation("DeptTree")
+  manager   Employee?    @relation("DeptManager", fields: [managerId], references: [id], onDelete: SetNull)
   employees Employee[]
 
   @@index([tenantId])
@@ -131,6 +139,12 @@ model Employee {
   leaveRequests LeaveRequest[]
   leaveBalances LeaveBalance[]
   attendance    AttendanceRecord[]
+  reviews       PerformanceReview[]
+  incidents     HseqIncident[]
+  ppeIssues     PpeIssue[]
+  medicals      MedicalRecord[]
+  training      TrainingRecord[]
+  managedDepts  Department[]        @relation("DeptManager")
 
   @@unique([tenantId, employeeNo])
   @@index([tenantId])
@@ -262,6 +276,99 @@ model AttendanceRecord {
   @@index([tenantId])
   @@index([tenantId, employeeId])
   @@map("attendance_record")
+}
+
+model PerformanceReview {
+  id             String    @id @default(uuid()) @db.Uuid
+  tenantId       String    @map("tenant_id") @db.Uuid
+  employeeId     String    @map("employee_id") @db.Uuid
+  cycle          String
+  reviewerId     String    @map("reviewer_id") @db.Uuid
+  rating         Int?
+  strengths      String?
+  improvements   String?
+  status         String    @default("draft") // draft | submitted | acknowledged
+  submittedAt    DateTime? @map("submitted_at")
+  acknowledgedAt DateTime? @map("acknowledged_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, employeeId, cycle])
+  @@index([tenantId])
+  @@index([tenantId, employeeId])
+  @@map("performance_review")
+}
+
+model HseqIncident {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  employeeId   String?  @map("employee_id") @db.Uuid
+  locationCode String   @map("location_code")
+  category     String // injury | near_miss | property | environmental
+  severity     String // low | medium | high | lti
+  description  String
+  occurredOn   DateTime @map("occurred_on") @db.Date
+  status       String   @default("open") // open | investigating | closed
+  reportedBy   String   @map("reported_by") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employee Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@map("hseq_incident")
+}
+
+model PpeIssue {
+  id         String    @id @default(uuid()) @db.Uuid
+  tenantId   String    @map("tenant_id") @db.Uuid
+  employeeId String    @map("employee_id") @db.Uuid
+  item       String
+  issuedOn   DateTime  @map("issued_on") @db.Date
+  expiresOn  DateTime? @map("expires_on") @db.Date
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("ppe_issue")
+}
+
+model MedicalRecord {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  employeeId String   @map("employee_id") @db.Uuid
+  type       String // osha | pre_employment | periodic
+  validFrom  DateTime @map("valid_from") @db.Date
+  validTo    DateTime @map("valid_to") @db.Date
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("medical_record")
+}
+
+model TrainingRecord {
+  id          String    @id @default(uuid()) @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  employeeId  String    @map("employee_id") @db.Uuid
+  course      String
+  provider    String?
+  status      String    @default("planned") // planned | completed | expired
+  completedOn DateTime? @map("completed_on") @db.Date
+  expiresOn   DateTime? @map("expires_on") @db.Date
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("training_record")
 }
 
 model ExactConnection {

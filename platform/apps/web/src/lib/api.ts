@@ -117,7 +117,74 @@ export const api = {
   attendance: () => apiFetch<{ data: AttendanceDto[] }>("/attendance"),
   clockIn: () => apiFetch<{ data: AttendanceDto }>("/attendance/clock-in", { method: "POST", body: JSON.stringify({ source: "manual" }) }),
   clockOut: () => apiFetch<{ data: AttendanceDto }>("/attendance/clock-out", { method: "POST", body: JSON.stringify({}) }),
+
+  reviews: () => apiFetch<{ data: ReviewDto[] }>("/performance/reviews"),
+  createReview: (body: { employeeId: string; cycle: string }) =>
+    apiFetch<{ data: ReviewDto }>("/performance/reviews", { method: "POST", body: JSON.stringify(body) }),
+  updateReview: (id: string, body: { rating?: number; strengths?: string; improvements?: string }) =>
+    apiFetch<{ data: ReviewDto }>(`/performance/reviews/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+  submitReview: (id: string) => apiFetch<{ data: ReviewDto }>(`/performance/reviews/${id}/submit`, { method: "POST", body: JSON.stringify({}) }),
+  acknowledgeReview: (id: string) => apiFetch<{ data: ReviewDto }>(`/performance/reviews/${id}/acknowledge`, { method: "POST", body: JSON.stringify({}) }),
+
+  departments: () => apiFetch<{ data: DeptDto[] }>("/org/departments"),
+  createDept: (body: { name: string; code?: string; parentId?: string; managerId?: string }) =>
+    apiFetch<{ data: DeptDto }>("/org/departments", { method: "POST", body: JSON.stringify(body) }),
+
+  hseqIncidents: () => apiFetch<{ data: IncidentDto[] }>("/hseq/incidents"),
+  hseqSummary: () => apiFetch<{ data: HseqSummaryDto }>("/hseq/summary"),
+  reportIncident: (body: {
+    locationCode: string;
+    category: string;
+    severity: string;
+    description: string;
+    occurredOn: string;
+    employeeId?: string;
+  }) => apiFetch<{ data: IncidentDto }>("/hseq/incidents", { method: "POST", body: JSON.stringify(body) }),
+  updateIncident: (id: string, status: string) =>
+    apiFetch<{ data: IncidentDto }>(`/hseq/incidents/${id}`, { method: "PATCH", body: JSON.stringify({ status }) }),
 };
+
+export interface ReviewDto {
+  id: string;
+  employeeId: string;
+  cycle: string;
+  rating: number | null;
+  status: string;
+  strengths: string | null;
+  improvements: string | null;
+  createdAt: string;
+}
+
+export interface DeptDto {
+  id: string;
+  name: string;
+  code: string | null;
+  parentId: string | null;
+  managerId: string | null;
+  managerName: string | null;
+  headcount: number;
+}
+
+export interface IncidentDto {
+  id: string;
+  employeeId: string | null;
+  locationCode: string;
+  category: string;
+  severity: string;
+  description: string;
+  occurredOn: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface HseqSummaryDto {
+  daysSinceLti: number | null;
+  incidentsMtd: number;
+  ltiYtd: number;
+  openIncidents: number;
+  validMedicalPct: number;
+  ppeCompliancePct: number;
+}
 
 export interface LeaveRequestDto {
   id: string;

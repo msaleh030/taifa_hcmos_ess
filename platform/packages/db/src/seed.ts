@@ -35,6 +35,7 @@ async function main(): Promise<void> {
     { email: "hrofficer@taifamining.tz", name: "Ali Mbaruk", roles: ["R06"] },
     { email: "payroll@taifamining.tz", name: "Cecilia Mushi", roles: ["R09"] },
     { email: "finance@taifamining.tz", name: "Omar Said", roles: ["R10"] },
+    { email: "sheq@taifamining.tz", name: "Amina Hassan", roles: ["R11"] },
     { email: "it@taifamining.tz", name: "Rajesh Pillai", roles: ["R13"] },
     { email: "employee@taifamining.tz", name: "Joseph Mlimani", roles: ["R01"] },
   ];

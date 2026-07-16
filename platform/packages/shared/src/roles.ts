@@ -65,6 +65,11 @@ export type Permission =
   | "attendance:clock"
   | "performance:read"
   | "performance:write"
+  | "org:manage"
+  | "hseq:read"
+  | "hseq:write"
+  | "training:read"
+  | "training:write"
   | "payroll:read"
   | "payroll:run"
   | "payroll:approve"
@@ -84,6 +89,11 @@ export const ALL_PERMISSIONS: Permission[] = [
   "attendance:clock",
   "performance:read",
   "performance:write",
+  "org:manage",
+  "hseq:read",
+  "hseq:write",
+  "training:read",
+  "training:write",
   "payroll:read",
   "payroll:run",
   "payroll:approve",
@@ -100,13 +110,13 @@ export const ALL_PERMISSIONS: Permission[] = [
  * `payroll:run` and `payroll:approve` are granted to different roles.
  */
 export const ROLE_PERMISSIONS: Record<RoleCode, Permission[]> = {
-  R01: ["employee:read", "leave:read", "leave:request", "attendance:clock"],
-  R02: ["employee:read", "leave:read", "leave:request", "leave:approve", "attendance:read", "attendance:clock", "performance:read", "performance:write"],
-  R03: ["employee:read", "leave:read", "leave:approve", "attendance:read", "performance:read", "performance:write"],
-  R04: ["employee:read", "leave:read", "leave:approve", "attendance:read", "performance:read", "performance:write"],
-  R05: ["employee:read", "leave:read", "leave:approve", "attendance:read", "performance:read", "performance:write"],
-  R06: ["employee:read", "employee:write", "employee:read:confidential", "leave:read", "leave:approve", "attendance:read", "performance:read", "performance:write"],
-  R07: ["employee:read", "employee:write", "leave:read", "leave:approve", "attendance:read", "performance:read", "performance:write"],
+  R01: ["employee:read", "leave:read", "leave:request", "attendance:clock", "performance:read", "training:read"],
+  R02: ["employee:read", "leave:read", "leave:request", "leave:approve", "attendance:read", "attendance:clock", "performance:read", "performance:write", "hseq:read", "training:read"],
+  R03: ["employee:read", "leave:read", "leave:approve", "attendance:read", "performance:read", "performance:write", "hseq:read", "hseq:write", "training:read"],
+  R04: ["employee:read", "leave:read", "leave:approve", "attendance:read", "performance:read", "performance:write", "hseq:read", "hseq:write", "training:read"],
+  R05: ["employee:read", "leave:read", "leave:approve", "attendance:read", "performance:read", "performance:write", "org:manage", "hseq:read", "training:read"],
+  R06: ["employee:read", "employee:write", "employee:read:confidential", "leave:read", "leave:approve", "attendance:read", "performance:read", "performance:write", "org:manage", "hseq:read", "training:read", "training:write"],
+  R07: ["employee:read", "employee:write", "leave:read", "leave:approve", "attendance:read", "performance:read", "performance:write", "hseq:read", "training:read", "training:write"],
   R08: [
     "employee:read",
     "employee:write",
@@ -116,12 +126,16 @@ export const ROLE_PERMISSIONS: Record<RoleCode, Permission[]> = {
     "attendance:read",
     "performance:read",
     "performance:write",
+    "org:manage",
+    "hseq:read",
+    "training:read",
+    "training:write",
     "audit:read",
   ],
   R09: ["employee:read", "employee:read:confidential", "leave:read", "payroll:read", "payroll:run"],
   R10: ["employee:read", "payroll:read", "payroll:approve", "leave:read"],
-  R11: ["employee:read", "leave:read", "attendance:read"],
-  R12: ["employee:read", "payroll:read", "audit:read", "leave:read", "attendance:read", "performance:read"],
+  R11: ["employee:read", "leave:read", "attendance:read", "hseq:read", "hseq:write", "training:read"],
+  R12: ["employee:read", "payroll:read", "audit:read", "leave:read", "attendance:read", "performance:read", "hseq:read", "org:manage"],
   R13: ["user:admin", "tenant:admin", "integration:manage", "audit:read"],
 };
 

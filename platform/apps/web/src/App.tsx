@@ -7,6 +7,9 @@ import { EmployeesPage } from "./pages/Employees.js";
 import { PayrollPage } from "./pages/Payroll.js";
 import { LeavePage } from "./pages/Leave.js";
 import { AttendancePage } from "./pages/Attendance.js";
+import { PerformancePage } from "./pages/Performance.js";
+import { OrgPage } from "./pages/Org.js";
+import { HseqPage } from "./pages/Hseq.js";
 import { AuditPage } from "./pages/Audit.js";
 import type { ReactElement } from "react";
 
@@ -32,6 +35,9 @@ export function App() {
         <Route path="/employees" element={<EmployeesPage />} />
         <Route path="/leave" element={<LeavePage />} />
         <Route path="/attendance" element={<AttendancePage />} />
+        <Route path="/performance" element={<PerformancePage />} />
+        <Route path="/org" element={<OrgPage />} />
+        <Route path="/hseq" element={<HseqPage />} />
         <Route path="/payroll" element={<PayrollPage />} />
         <Route path="/audit" element={<AuditPage />} />
       </Route>

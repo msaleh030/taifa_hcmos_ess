@@ -49,6 +49,9 @@ describe.skipIf(!run)("HCMOS API integration", () => {
       headers: token ? { authorization: `Bearer ${token}` } : {},
     });
   }
+  async function patch(url: string, body: unknown, token: string) {
+    return app.inject({ method: "PATCH", url, payload: body, headers: { authorization: `Bearer ${token}` } });
+  }
   async function get(url: string, token: string) {
     return app.inject({ method: "GET", url, headers: { authorization: `Bearer ${token}` } });
   }
@@ -205,5 +208,74 @@ describe.skipIf(!run)("HCMOS API integration", () => {
 
     const list = (await get("/api/attendance", employee)).json().data;
     expect(Array.isArray(list)).toBe(true);
+  });
+
+  it("runs the performance appraisal lifecycle (draft→submit→acknowledge)", async () => {
+    const hr = await fullLogin("hrhead@taifamining.tz"); // performance:write
+    // Find Joseph's employee id (the ESS-linked employee).
+    const employees = (await get("/api/employees", hr)).json().data;
+    const joseph = employees.find((e: { firstName: string }) => e.firstName === "Joseph");
+    expect(joseph).toBeTruthy();
+
+    const created = await post("/api/performance/reviews", { employeeId: joseph.id, cycle: "2027-Q1" }, hr);
+    expect([201, 409]).toContain(created.statusCode);
+    let reviewId: string;
+    if (created.statusCode === 201) {
+      reviewId = created.json().data.id;
+    } else {
+      reviewId = (await get("/api/performance/reviews", hr)).json().data.find((r: { cycle: string }) => r.cycle === "2027-Q1").id;
+    }
+
+    // Submitting without a rating is rejected.
+    const early = await post(`/api/performance/reviews/${reviewId}/submit`, {}, hr);
+    expect([400, 409]).toContain(early.statusCode);
+
+    // Rate then submit.
+    await patch(`/api/performance/reviews/${reviewId}`, { rating: 4, strengths: "Reliable" }, hr).then((r) =>
+      expect([200, 409]).toContain(r.statusCode),
+    );
+    const submitted = await post(`/api/performance/reviews/${reviewId}/submit`, {}, hr);
+    expect([200, 409]).toContain(submitted.statusCode);
+
+    // The employee acknowledges their own review; HR (not the subject) cannot.
+    const hrAck = await post(`/api/performance/reviews/${reviewId}/acknowledge`, {}, hr);
+    expect(hrAck.statusCode).toBe(403);
+    const employee = await fullLogin("employee@taifamining.tz");
+    const empAck = await post(`/api/performance/reviews/${reviewId}/acknowledge`, {}, employee);
+    expect([200, 409]).toContain(empAck.statusCode);
+  });
+
+  it("manages departments (org:manage) and shows headcount", async () => {
+    const hr = await fullLogin("hrhead@taifamining.tz"); // org:manage
+    const before = (await get("/api/org/departments", hr)).json().data;
+    expect(before.length).toBeGreaterThan(0);
+    expect(before.reduce((n: number, d: { headcount: number }) => n + d.headcount, 0)).toBeGreaterThan(0);
+
+    const created = await post("/api/org/departments", { name: "Logistics", code: "LOG" }, hr);
+    expect(created.statusCode).toBe(201);
+
+    // A plain employee cannot create departments.
+    const employee = await fullLogin("employee@taifamining.tz");
+    const denied = await post("/api/org/departments", { name: "Rogue" }, employee);
+    expect(denied.statusCode).toBe(403);
+  });
+
+  it("logs HSEQ incidents and reflects them in the safety summary", async () => {
+    const sheq = await fullLogin("sheq@taifamining.tz"); // R11 SHEQ Manager (hseq:write)
+    const reported = await post(
+      "/api/hseq/incidents",
+      { locationCode: "MWD", category: "injury", severity: "lti", description: "Hand injury at crusher", occurredOn: "2026-06-19" },
+      sheq,
+    );
+    expect(reported.statusCode).toBe(201);
+    const incidentId = reported.json().data.id;
+
+    const summary = (await get("/api/hseq/summary", sheq)).json().data;
+    expect(summary.ltiYtd).toBeGreaterThanOrEqual(1);
+    expect(summary.openIncidents).toBeGreaterThanOrEqual(1);
+
+    const patched = await patch(`/api/hseq/incidents/${incidentId}`, { status: "closed" }, sheq);
+    expect(patched.statusCode).toBe(200);
+    expect(patched.json().data.status).toBe("closed");
   });
 });

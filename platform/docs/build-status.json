@@ -22,7 +22,7 @@
         { "key": "employees", "name": "Employee master & lifecycle", "status": "done", "db": true, "api": true, "web": true, "tests": true, "note": "Confidential fields absent-not-masked; TMCL numbering" },
         { "key": "payroll", "name": "Payroll run & approval", "status": "done", "db": true, "api": true, "web": true, "tests": true, "note": "Statutory engine; SoD maker≠checker at app + DB" },
         { "key": "leave", "name": "Leave & liability", "status": "done", "db": true, "api": true, "web": true, "tests": true, "note": "Request→approve, ELRA entitlements, monetised liability" },
-        { "key": "org", "name": "Organization & departments", "status": "planned", "db": false, "api": false, "web": false, "tests": false, "note": "Org chart, reporting lines, transfers" },
+        { "key": "org", "name": "Organization & departments", "status": "done", "db": true, "api": true, "web": true, "tests": true, "note": "Department CRUD, tree, department heads, headcount" },
         { "key": "disciplinary", "name": "Disciplinary & grievances", "status": "planned", "db": false, "api": false, "web": false, "tests": false, "note": "Cases, hearings, outcomes with confidentiality" },
         { "key": "recruitment", "name": "Recruitment & onboarding", "status": "planned", "db": false, "api": false, "web": false, "tests": false, "note": "Requisitions, candidates, OSHA medical stage" }
       ]
@@ -37,15 +37,15 @@
     {
       "name": "Performance & Development",
       "modules": [
-        { "key": "performance", "name": "Performance appraisals", "status": "planned", "db": false, "api": false, "web": false, "tests": false, "note": "Cycles, ratings, acknowledgement" },
-        { "key": "training", "name": "Training & competency", "status": "planned", "db": false, "api": false, "web": false, "tests": false, "note": "Courses, certifications, expiry tracking" },
+        { "key": "performance", "name": "Performance appraisals", "status": "done", "db": true, "api": true, "web": true, "tests": true, "note": "Draft→submit→acknowledge, ratings, ESS acknowledgement" },
+        { "key": "training", "name": "Training & competency", "status": "in_progress", "db": true, "api": false, "web": false, "tests": false, "note": "Schema in place; API + web pending" },
         { "key": "kpi", "name": "KPI scorecard", "status": "planned", "db": false, "api": false, "web": false, "tests": false, "note": "Group & site KPIs, turnover, cost ratios" }
       ]
     },
     {
       "name": "Compliance & Safety (HSEQ)",
       "modules": [
-        { "key": "hseq", "name": "HSEQ incidents, PPE & medicals", "status": "planned", "db": false, "api": false, "web": false, "tests": false, "note": "LTI tracking, PPE compliance, medical validity" }
+        { "key": "hseq", "name": "HSEQ incidents, PPE & medicals", "status": "done", "db": true, "api": true, "web": true, "tests": true, "note": "Incident lifecycle, PPE & medical tracking, safety KPIs" }
       ]
     },
     {
