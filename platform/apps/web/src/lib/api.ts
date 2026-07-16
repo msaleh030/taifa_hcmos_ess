@@ -47,7 +47,9 @@ async function attemptRefresh(): Promise<boolean> {
 
 export async function apiFetch<T>(path: string, init: RequestInit = {}, retry = true): Promise<T> {
   const headers = new Headers(init.headers);
-  headers.set("content-type", "application/json");
+  // Only declare a JSON content-type when we actually send a body — Fastify
+  // rejects an empty body that claims to be application/json.
+  if (init.body != null) headers.set("content-type", "application/json");
   if (tokens.access) headers.set("authorization", `Bearer ${tokens.access}`);
 
   const res = await fetch(`${BASE}/api${path}`, { ...init, headers });

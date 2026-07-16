@@ -97,12 +97,58 @@ async function main(): Promise<void> {
   }
 
   // Link the ESS demo login to Joseph Mlimani's employee record.
-  const joseph = await prisma.employee.findFirst({ where: { tenantId: tenant.id, firstName: "Joseph", lastName: "Mlimani" } });
+  const emps = await prisma.employee.findMany({ where: { tenantId: tenant.id } });
+  const byName = (f: string) => emps.find((e) => e.firstName === f);
+  const joseph = byName("Joseph");
+  const grace = byName("Grace");
   if (joseph) {
     await prisma.user.update({
       where: { tenantId_email: { tenantId: tenant.id, email: "employee@taifamining.tz" } },
       data: { employeeId: joseph.id },
     });
+  }
+
+  // ── Illustrative operational data so every module renders populated ────────
+  const hrUser = await prisma.user.findUnique({ where: { tenantId_email: { tenantId: tenant.id, email: "hrhead@taifamining.tz" } } });
+  const empUser = await prisma.user.findUnique({ where: { tenantId_email: { tenantId: tenant.id, email: "employee@taifamining.tz" } } });
+  const D = (s: string) => new Date(s);
+
+  // Department head + codes.
+  if (grace) {
+    const ops = await prisma.department.findFirst({ where: { tenantId: tenant.id, name: "Operations" } });
+    if (ops) await prisma.department.update({ where: { id: ops.id }, data: { managerId: grace.id, code: "OPS" } });
+  }
+  for (const [name, code] of [["Human Resources", "HR"], ["Finance", "FIN"], ["SHEQ", "SHEQ"]] as const) {
+    const d = await prisma.department.findFirst({ where: { tenantId: tenant.id, name } });
+    if (d && !d.code) await prisma.department.update({ where: { id: d.id }, data: { code } });
+  }
+
+  // PPE + medicals for the whole workforce (drives HSEQ compliance KPIs).
+  if ((await prisma.ppeIssue.count({ where: { tenantId: tenant.id } })) === 0) {
+    for (const e of emps) {
+      await prisma.ppeIssue.create({ data: { tenantId: tenant.id, employeeId: e.id, item: "helmet", issuedOn: D("2026-01-15"), expiresOn: D("2027-01-15") } });
+      await prisma.medicalRecord.create({ data: { tenantId: tenant.id, employeeId: e.id, type: "osha", validFrom: D("2026-01-10"), validTo: D("2026-12-31") } });
+    }
+  }
+
+  // One-time operational rows (idempotent guard).
+  if ((await prisma.leaveRequest.count({ where: { tenantId: tenant.id } })) === 0) {
+    if (joseph && empUser && hrUser) {
+      await prisma.leaveRequest.create({ data: { tenantId: tenant.id, employeeId: joseph.id, type: "annual", startDate: D("2026-07-06"), endDate: D("2026-07-10"), days: 5, status: "approved", requestedBy: empUser.id, decidedBy: hrUser.id, decidedAt: D("2026-07-02") } });
+      await prisma.leaveRequest.create({ data: { tenantId: tenant.id, employeeId: joseph.id, type: "sick", startDate: D("2026-07-20"), endDate: D("2026-07-21"), days: 2, status: "pending", requestedBy: empUser.id } });
+      for (const day of ["2026-07-13", "2026-07-14", "2026-07-15"]) {
+        await prisma.attendanceRecord.create({ data: { tenantId: tenant.id, employeeId: joseph.id, workDate: D(day), clockIn: D(`${day}T07:00:00Z`), clockOut: D(`${day}T16:30:00Z`), minutes: 570, source: "biometric" } });
+      }
+      await prisma.performanceReview.create({ data: { tenantId: tenant.id, employeeId: joseph.id, cycle: "2026-Q2", reviewerId: hrUser.id, rating: 4, strengths: "Reliable operator, strong safety record", improvements: "Take on mentoring", status: "submitted", submittedAt: D("2026-07-01") } });
+    }
+    if (grace && hrUser) {
+      await prisma.performanceReview.create({ data: { tenantId: tenant.id, employeeId: grace.id, cycle: "2026-Q2", reviewerId: hrUser.id, rating: 5, strengths: "Excellent team leadership", status: "acknowledged", submittedAt: D("2026-06-28"), acknowledgedAt: D("2026-06-30") } });
+    }
+    if (hrUser) {
+      await prisma.hseqIncident.create({ data: { tenantId: tenant.id, locationCode: "DAR", category: "injury", severity: "lti", description: "Hand laceration at Dar yard", occurredOn: D("2026-06-19"), status: "closed", reportedBy: hrUser.id } });
+      await prisma.hseqIncident.create({ data: { tenantId: tenant.id, locationCode: "MWD", category: "near_miss", severity: "medium", description: "Vehicle reversing near pedestrians", occurredOn: D("2026-07-11"), status: "investigating", reportedBy: hrUser.id } });
+      await prisma.hseqIncident.create({ data: { tenantId: tenant.id, locationCode: "MWD", category: "environmental", severity: "low", description: "Minor hydraulic spill contained", occurredOn: D("2026-07-14"), status: "open", reportedBy: hrUser.id } });
+    }
   }
 
   // eslint-disable-next-line no-console
