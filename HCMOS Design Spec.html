@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>HCMOS™ — Visual Build Specification</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<!-- Canonical kit. Product component classes (.card,.tbl,.kpi,.tag,.btn,.navitem…) come from here;
+     spec chrome is namespaced d-* so it never collides. -->
+<link rel="stylesheet" href="styles.css"/>
+<style>
+/* ─────────────────────────────────────────────────────────────
+   SPEC CHROME — namespaced d-* so linked styles.css can't leak in.
+   Documentation surface is intentionally cooler/darker than the
+   product so embedded (light) product renders read as the subject.
+   ───────────────────────────────────────────────────────────── */
+:root{
+  --d-bg:#0d1218; --d-panel:#12181f; --d-panel-2:#161e26; --d-ink:#e7edf1;
+  --d-mut:#9aa7b2; --d-faint:#66727c; --d-line:#222c35; --d-line-2:#1a232b;
+  --d-accent:#1FA24A; --d-blue:#0094D4; --d-yellow:#FBC02D; --d-red:#E5484D;
+  --d-code:#8fe3b3; --d-r:12px; --d-mono:'IBM Plex Mono',ui-monospace,monospace;
+  --d-sans:'IBM Plex Sans',system-ui,sans-serif;
+}
+html,body{height:auto;min-height:100%;margin:0;}
+body{background:var(--d-bg);color:var(--d-ink);font-family:var(--d-sans);
+  font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased;scroll-behavior:smooth;}
+.d-mono{font-family:var(--d-mono);}
+code,.d-tok{font-family:var(--d-mono);font-size:.86em;color:var(--d-code);
+  background:rgba(143,227,179,.08);border:1px solid rgba(143,227,179,.16);
+  border-radius:6px;padding:1px 6px;white-space:nowrap;}
+.d-tok.dim{color:var(--d-mut);background:rgba(255,255,255,.04);border-color:var(--d-line);}
+a{color:var(--d-accent);}
+
+/* shell */
+.d-shell{display:flex;align-items:flex-start;}
+.d-side{width:272px;flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto;
+  background:var(--d-panel);border-right:1px solid var(--d-line);padding:0 0 40px;}
+.d-side::before{content:"";display:block;height:3px;
+  background:linear-gradient(90deg,#1FA24A 0 34%,#FBC02D 34% 67%,#0094D4 67% 100%);}
+.d-brand{padding:22px 22px 16px;border-bottom:1px solid var(--d-line-2);}
+.d-brand b{font-size:16px;font-weight:700;letter-spacing:-.01em;}
+.d-brand b sup{font-size:9px;color:var(--d-faint);font-weight:600;}
+.d-brand .d-sub{font-size:10.5px;color:var(--d-faint);text-transform:uppercase;
+  letter-spacing:.11em;margin-top:6px;font-weight:600;}
+.d-navwrap{padding:12px 12px 0;}
+.d-navgrp{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--d-faint);
+  font-weight:700;padding:16px 12px 7px;}
+.d-nav{display:flex;flex-direction:column;gap:1px;}
+.d-nav a{display:flex;align-items:center;gap:9px;padding:7px 12px;border-radius:8px;
+  color:var(--d-mut);text-decoration:none;font-size:13.5px;font-weight:500;transition:.12s;}
+.d-nav a .k{font-family:var(--d-mono);font-size:10.5px;color:var(--d-faint);
+  flex-shrink:0;width:30px;}
+.d-nav a:hover{background:var(--d-panel-2);color:var(--d-ink);}
+.d-nav a.on{background:rgba(31,162,74,.14);color:#5fd08a;font-weight:600;}
+.d-nav a.on .k{color:#5fd08a;}
+
+/* main column */
+.d-main{flex:1;min-width:0;max-width:1240px;margin:0 auto;padding:0 clamp(20px,4vw,64px);}
+.d-sec{padding:54px 0 8px;border-top:1px solid var(--d-line-2);}
+.d-sec:first-child{border-top:none;}
+section[id]{scroll-margin-top:20px;}
+.d-eyebrow{font-family:var(--d-mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--d-accent);font-weight:600;margin-bottom:12px;}
+.d-h1{font-size:40px;line-height:1.08;font-weight:700;letter-spacing:-.03em;margin:0 0 16px;}
+.d-h2{font-size:27px;line-height:1.15;font-weight:700;letter-spacing:-.02em;margin:0 0 10px;}
+.d-h3{font-size:16px;font-weight:700;letter-spacing:-.005em;margin:30px 0 12px;
+  display:flex;align-items:center;gap:10px;}
+.d-h3 .n{font-family:var(--d-mono);font-size:12px;color:var(--d-accent);
+  border:1px solid rgba(31,162,74,.4);border-radius:6px;padding:2px 8px;font-weight:600;}
+.d-lead{font-size:16.5px;color:var(--d-mut);max-width:70ch;line-height:1.65;}
+.d-p{color:var(--d-mut);max-width:74ch;}
+.d-p b,.d-lead b{color:var(--d-ink);font-weight:600;}
+.d-hr{height:1px;background:var(--d-line);border:0;margin:34px 0;}
+
+/* callout */
+.d-note{display:flex;gap:12px;padding:14px 16px;border-radius:var(--d-r);
+  background:var(--d-panel);border:1px solid var(--d-line);margin:18px 0;font-size:14px;
+  color:var(--d-mut);line-height:1.55;}
+.d-note .b{width:3px;border-radius:3px;flex-shrink:0;background:var(--d-accent);}
+.d-note.flag .b{background:var(--d-yellow);}
+.d-note.rule .b{background:var(--d-blue);}
+.d-note b{color:var(--d-ink);}
+.d-note .tag{font-family:var(--d-mono);font-size:10.5px;font-weight:700;letter-spacing:.04em;
+  text-transform:uppercase;color:var(--d-yellow);margin-right:6px;}
+
+/* generic spec tables */
+.d-table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.5px;
+  border:1px solid var(--d-line);border-radius:var(--d-r);overflow:hidden;}
+.d-table th{text-align:left;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--d-faint);font-weight:700;padding:11px 14px;background:var(--d-panel-2);
+  border-bottom:1px solid var(--d-line);}
+.d-table td{padding:11px 14px;border-bottom:1px solid var(--d-line-2);color:var(--d-mut);
+  vertical-align:top;}
+.d-table tr:last-child td{border-bottom:none;}
+.d-table td b{color:var(--d-ink);font-weight:600;}
+.d-table .d-tok{font-size:12px;}
+
+/* token grids */
+.d-grid{display:grid;gap:14px;margin:18px 0;}
+.d-cols-2{grid-template-columns:repeat(2,1fr);}
+.d-cols-3{grid-template-columns:repeat(3,1fr);}
+.d-cols-4{grid-template-columns:repeat(4,1fr);}
+@media(max-width:900px){.d-cols-3,.d-cols-4{grid-template-columns:repeat(2,1fr);}}
+.d-swatch{border:1px solid var(--d-line);border-radius:var(--d-r);overflow:hidden;background:var(--d-panel);}
+.d-swatch .chip{height:64px;}
+.d-swatch .meta{padding:10px 12px;}
+.d-swatch .nm{font-size:13px;font-weight:600;color:var(--d-ink);}
+.d-swatch .hx{font-family:var(--d-mono);font-size:11px;color:var(--d-mut);margin-top:2px;}
+.d-swatch .use{font-size:11px;color:var(--d-faint);margin-top:5px;line-height:1.4;}
+
+.d-spec{background:var(--d-panel);border:1px solid var(--d-line);border-radius:var(--d-r);
+  padding:16px 18px;}
+.d-spec .k{font-family:var(--d-mono);font-size:11px;color:var(--d-faint);text-transform:uppercase;
+  letter-spacing:.05em;}
+.d-spec .v{font-size:15px;font-weight:600;margin-top:3px;}
+.d-spec .v small{color:var(--d-mut);font-weight:500;font-size:12px;}
+
+/* type specimen */
+.d-type{border:1px solid var(--d-line);border-radius:var(--d-r);background:var(--d-panel);
+  padding:16px 18px;margin:10px 0;display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;}
+.d-type .sample{color:var(--d-ink);flex:1;min-width:200px;}
+.d-type .meta{font-family:var(--d-mono);font-size:11.5px;color:var(--d-mut);text-align:right;line-height:1.7;}
+
+/* component demo surface — product renders on a light plate */
+.d-demo-wrap{margin:16px 0;border:1px solid var(--d-line);border-radius:var(--d-r);overflow:hidden;}
+.d-demo-bar{display:flex;align-items:center;gap:8px;padding:9px 14px;background:var(--d-panel-2);
+  border-bottom:1px solid var(--d-line);font-size:11px;font-family:var(--d-mono);
+  text-transform:uppercase;letter-spacing:.05em;color:var(--d-faint);}
+.demo{padding:22px;background:#EEF1F3;color:#15191D;}
+.demo.on-white{background:#fff;}
+
+/* reference viewport (product embed) */
+.d-vp{margin:18px 0 8px;border:1px solid var(--d-line);border-radius:14px;overflow:hidden;
+  background:#0b0f13;box-shadow:0 24px 60px rgba(0,0,0,.4);}
+.d-vp-bar{display:flex;align-items:center;gap:8px;padding:11px 15px;background:#11161b;
+  border-bottom:1px solid #1e262d;}
+.d-vp-bar .dot{width:11px;height:11px;border-radius:50%;background:#3a444d;}
+.d-vp-bar .dot.r{background:#E5484D;}.d-vp-bar .dot.y{background:#FBC02D;}.d-vp-bar .dot.g{background:#1FA24A;}
+.d-vp-bar .t{font-family:var(--d-mono);font-size:11.5px;color:#8b98a2;margin-left:6px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.d-vp-bar .open{margin-left:auto;font-family:var(--d-mono);font-size:11px;color:#5fd08a;
+  text-decoration:none;flex-shrink:0;border:1px solid rgba(31,162,74,.3);border-radius:6px;padding:3px 9px;}
+.d-vp-bar .open:hover{background:rgba(31,162,74,.12);}
+.d-frame{width:100%;height:724px;border:0;display:block;background:#EEF1F3;}
+.d-frame.mob{height:880px;}
+.d-hint{font-size:12.5px;color:var(--d-faint);margin:2px 0 22px;display:flex;gap:7px;align-items:center;}
+.d-hint b{color:var(--d-mut);font-weight:600;}
+
+/* screen block: meta + redline columns */
+.d-meta{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 4px;}
+.d-pill{font-family:var(--d-mono);font-size:11px;font-weight:600;letter-spacing:.02em;
+  border-radius:20px;padding:4px 11px;border:1px solid var(--d-line);color:var(--d-mut);
+  background:var(--d-panel);display:inline-flex;align-items:center;gap:6px;}
+.d-pill.role{color:#5fd08a;border-color:rgba(31,162,74,.35);}
+.d-pill.ac{color:#5cb6e8;border-color:rgba(0,148,212,.32);}
+.d-pill.file{color:var(--d-mut);}
+.d-rl{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:18px 0;}
+@media(max-width:860px){.d-rl{grid-template-columns:1fr;}.d-side{display:none;}
+  .d-cols-2{grid-template-columns:1fr;}}
+.d-panel{background:var(--d-panel);border:1px solid var(--d-line);border-radius:var(--d-r);
+  padding:16px 18px;}
+.d-panel h4{margin:0 0 12px;font-size:12px;text-transform:uppercase;letter-spacing:.07em;
+  color:var(--d-faint);font-weight:700;display:flex;align-items:center;gap:8px;}
+.d-panel h4 .ic{width:7px;height:7px;border-radius:2px;background:var(--d-accent);}
+.d-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px;}
+.d-list li{font-size:13.5px;color:var(--d-mut);line-height:1.5;padding-left:16px;position:relative;}
+.d-list li::before{content:"";position:absolute;left:0;top:9px;width:5px;height:5px;
+  border-radius:50%;background:var(--d-faint);}
+.d-list li b{color:var(--d-ink);font-weight:600;}
+.d-list.grid-cols{display:grid;grid-template-columns:1fr;gap:9px;}
+
+/* state chips */
+.d-states{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px;}
+.d-state{font-size:12.5px;border:1px solid var(--d-line);border-radius:9px;padding:8px 12px;
+  background:var(--d-panel);color:var(--d-mut);line-height:1.4;flex:1;min-width:210px;}
+.d-state b{display:block;color:var(--d-ink);font-family:var(--d-mono);font-size:11px;
+  text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;font-weight:600;}
+.d-state.k b{color:#5fd08a;} /* screen-specific / key states */
+.d-state.k{border-color:rgba(31,162,74,.3);}
+
+/* ── scoped state-component demo styles (flow-kit primitives NOT yet in styles.css) ── */
+.demo .banner{padding:11px 13px;border-radius:11px;font-size:12.5px;display:flex;gap:9px;align-items:flex-start;line-height:1.45;}
+.demo .banner.off{background:rgba(251,192,45,.16);color:#9A6B00;border:1px solid rgba(251,192,45,.5);}
+.demo .banner.err{background:rgba(229,72,77,.12);color:#E5484D;border:1px solid rgba(229,72,77,.4);}
+.demo .banner.ok{background:rgba(31,162,74,.13);color:#178A3E;border:1px solid rgba(31,162,74,.4);}
+.demo .banner.info{background:rgba(0,148,212,.1);color:#0094D4;border:1px solid rgba(0,148,212,.3);}
+.demo .banner svg{width:16px;height:16px;flex-shrink:0;margin-top:1px;}
+.demo .center{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:26px;gap:11px;color:#5C6770;background:#fff;border:1px solid #E2E7EA;border-radius:12px;}
+.demo .center .ic{width:52px;height:52px;border-radius:15px;display:flex;align-items:center;justify-content:center;background:#F6F8F9;color:#8A949C;}
+.demo .center .ic.warn{background:rgba(251,192,45,.16);color:#9A6B00;}
+.demo .center .ic.err{background:rgba(229,72,77,.12);color:#E5484D;}
+.demo .center .ic svg{width:24px;height:24px;}
+.demo .center h3{margin:0;color:#15191D;font-size:16px;}
+.demo .center p{margin:0;font-size:12.5px;max-width:300px;line-height:1.5;}
+.demo .center .why{font-family:var(--d-mono);font-weight:600;font-size:11px;background:#F6F8F9;border:1px solid #E2E7EA;border-radius:7px;padding:6px 10px;color:#5C6770;}
+.demo .seal{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:18px;background:#fff;border:1px solid #E2E7EA;border-radius:12px;}
+.demo .seal .disc{width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(31,162,74,.14);color:#1FA24A;}
+.demo .seal .disc svg{width:28px;height:28px;}
+.demo .seal h3{margin:2px 0 0;font-size:18px;color:#15191D;}
+.demo .seal p{margin:0;font-size:12.5px;color:#5C6770;max-width:280px;}
+.demo .skelrow{height:15px;border-radius:6px;background:linear-gradient(90deg,#F6F8F9,#EAEEF0,#F6F8F9);background-size:200% 100%;animation:dsh 1.2s linear infinite;}
+@keyframes dsh{to{background-position:-200% 0;}}
+.demo .field label{display:block;font-size:11px;color:#5C6770;margin-bottom:5px;font-weight:600;}
+.demo .field .req{color:#E5484D;}
+.demo .field input,.demo .field select{width:100%;border:1px solid #E2E7EA;border-radius:9px;padding:10px 11px;background:#F6F8F9;color:#15191D;font:inherit;font-size:13px;}
+.demo .fg{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.demo .stk{display:flex;flex-direction:column;gap:10px;}
+.demo .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.demo .lbl-sm{font-family:var(--d-mono);font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#8A949C;font-weight:700;margin:2px 0;}
+
+/* back-to-top footer */
+.d-foot{padding:50px 0 70px;border-top:1px solid var(--d-line-2);margin-top:40px;color:var(--d-faint);font-size:13px;}
+.d-foot a{font-family:var(--d-mono);font-size:12px;}
+.d-divider-label{display:flex;align-items:center;gap:14px;margin:8px 0 0;}
+.d-divider-label .ln{flex:1;height:1px;background:var(--d-line);}
+.d-divider-label span{font-family:var(--d-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--d-faint);}
+</style>
+</head>
+<body>
+<template id="__bundler_thumbnail" data-bg-color="#0d1218"><svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg"><rect width="1200" height="800" fill="#0d1218"/><rect x="360" y="250" width="480" height="300" rx="24" fill="none" stroke="#1FA24A" stroke-width="10"/><path d="M360 340h480" stroke="#222c35" stroke-width="8"/><circle cx="410" cy="295" r="10" fill="#E5484D"/><circle cx="446" cy="295" r="10" fill="#FBC02D"/><circle cx="482" cy="295" r="10" fill="#1FA24A"/><text x="600" y="620" text-anchor="middle" font-family="monospace" font-size="40" font-weight="700" fill="#e7edf1" letter-spacing="6">HCMOS SPEC</text><text x="600" y="670" text-anchor="middle" font-family="monospace" font-size="22" fill="#66727c" letter-spacing="4">VISUAL BUILD REFERENCE</text></svg></template>
+
+<div class="d-shell">
+<aside class="d-side">
+  <div class="d-brand">
+    <b>HCMOS<sup>™</sup> Spec</b>
+    <div class="d-sub">Visual Build Reference</div>
+  </div>
+  <div class="d-navwrap">
+    <div class="d-navgrp">Start here</div>
+    <nav class="d-nav">
+      <a href="#overview"><span class="k">00</span>Overview &amp; how to use</a>
+    </nav>
+    <div class="d-navgrp">Foundations</div>
+    <nav class="d-nav">
+      <a href="#color"><span class="k">F1</span>Colour</a>
+      <a href="#type"><span class="k">F2</span>Typography</a>
+      <a href="#space"><span class="k">F3</span>Spacing &amp; layout</a>
+      <a href="#radius"><span class="k">F4</span>Radius &amp; elevation</a>
+      <a href="#motion"><span class="k">F5</span>Motion</a>
+      <a href="#modes"><span class="k">F6</span>Themes &amp; surfaces</a>
+      <a href="#diverge"><span class="k">F7</span>Divergence flags</a>
+    </nav>
+    <div class="d-navgrp">Components</div>
+    <nav class="d-nav">
+      <a href="#c-nav"><span class="k">K1</span>Navigation</a>
+      <a href="#c-card"><span class="k">K2</span>Cards &amp; bento</a>
+      <a href="#c-kpi"><span class="k">K3</span>KPI tile</a>
+      <a href="#c-table"><span class="k">K4</span>Tables</a>
+      <a href="#c-form"><span class="k">K5</span>Forms</a>
+      <a href="#c-button"><span class="k">K6</span>Buttons</a>
+      <a href="#c-tag"><span class="k">K7</span>Tags &amp; status</a>
+      <a href="#c-state"><span class="k">K8</span>States</a>
+    </nav>
+    <div class="d-navgrp">Console · desktop</div>
+    <nav class="d-nav">
+      <a href="#c1"><span class="k">C1</span>Login</a>
+      <a href="#c2"><span class="k">C2</span>Workforce Overview</a>
+      <a href="#c4"><span class="k">C4</span>Directory</a>
+      <a href="#c5"><span class="k">C5</span>Profile</a>
+      <a href="#c3"><span class="k">C3</span>KPI Scorecard</a>
+      <a href="#c10"><span class="k">C10</span>Leave &amp; coverage</a>
+      <a href="#c16"><span class="k">C16</span>Leave liability</a>
+      <a href="#c8"><span class="k">C8</span>Disciplinary</a>
+      <a href="#c18"><span class="k">C18</span>Exact integration</a>
+      <a href="#c20b"><span class="k">C20b</span>Expiry alerts</a>
+      <a href="#c20"><span class="k">C20</span>Controls &amp; checker</a>
+      <a href="#c21"><span class="k">C21</span>Tenant wizard</a>
+    </nav>
+    <div class="d-navgrp">ESS · mobile</div>
+    <nav class="d-nav">
+      <a href="#ess"><span class="k">E2</span>ESS services</a>
+      <a href="#e3"><span class="k">E3</span>Attendance</a>
+      <a href="#e4"><span class="k">E4</span>Apply leave</a>
+      <a href="#e6"><span class="k">E6</span>Payslip</a>
+      <a href="#e8"><span class="k">E8</span>My KPIs</a>
+    </nav>
+  </div>
+</aside>
+
+<main class="d-main">
+
+<!-- ═══════════════ OVERVIEW ═══════════════ -->
+<section id="overview" class="d-sec">
+  <div class="d-eyebrow">HCMOS™ · Taifa Human Capital Operating System</div>
+  <h1 class="d-h1">Visual build specification</h1>
+  <p class="d-lead">The design is a <b>locked decision</b> — it just was never built to. This is the authoritative reference the deployed UI must match, screen by screen. Every screen below embeds its <b>approved prototype render</b> beside token-level redlines, the full state set, and the confidentiality / wording rules. <b>Design-system fidelity is the acceptance bar:</b> if the built screen doesn't match the embed and honour the tokens, it isn't done.</p>
+
+  <div class="d-note rule"><div class="b"></div><div><b>How to read a screen entry.</b> Each carries — a meta row (screen code · source file · role scope · acceptance criteria); the <b>live reference embed</b> (the real approved markup, with the flow's own switcher so you can inspect every state / theme / surface in place); a two-column redline (<b>left:</b> bento layout &amp; the tokens that set it — no raw pixels; <b>right:</b> components used + the rules that gate content); and the <b>full state set</b> that screen must draw.</div></div>
+
+  <div class="d-note"><div class="b"></div><div><b>Tokens over pixels.</b> Per direction, redlines reference the <b>named token</b> (<span class="d-tok">--pad</span>, <span class="d-tok">--r</span>, <span class="d-tok">--gap</span>, grid track counts) rather than measured values, so the build stays parametric. Concrete values live once, in <a href="#color">Foundations</a>. <span class="d-tok dim">styles.css</span> is canonical; where the flow kits diverge it is flagged in <a href="#diverge">F7</a>.</div></div>
+
+  <div class="d-note flag"><div class="b"></div><div><span class="tag">Non-negotiable wording</span> Pay is always <b>Total Pay</b> and <b>Net Pay (Total Pay − Total Deduction)</b> — never “Total Allowance”. Confidential fields are <b>absent, not masked</b>, for roles without entitlement. Generated numbers are <b>TMCL-&lt;LOC&gt;-&lt;SEQ&gt;</b>, non-editable.</div></div>
+
+  <div class="d-grid d-cols-4" style="margin-top:26px">
+    <div class="d-spec"><div class="k">Screens speced</div><div class="v">14 <small>console + ESS</small></div></div>
+    <div class="d-spec"><div class="k">States / screen</div><div class="v">8 <small>+ screen nets</small></div></div>
+    <div class="d-spec"><div class="k">Themes</div><div class="v">4 <small>L·D·Glass·Reduced</small></div></div>
+    <div class="d-spec"><div class="k">Surfaces</div><div class="v">4 <small>Desk·Tab·Mob·Kiosk</small></div></div>
+  </div>
+</section>
+
+<!-- ═══════════════ FOUNDATIONS ═══════════════ -->
+<section id="color" class="d-sec">
+  <div class="d-eyebrow">Foundations · F1</div>
+  <h2 class="d-h2">Colour</h2>
+  <p class="d-p">A neutral, slightly-cool greyscale carries structure; colour is spent only with intent — <b>green for action &amp; active</b>, and the RAG semantics for status. Whites and greys sit near-zero chroma. All values below are the canonical light theme from <span class="d-tok dim">styles.css</span>.</p>
+
+  <div class="d-h3"><span class="n">brand + semantic</span> Accent &amp; status</div>
+  <div class="d-grid d-cols-4">
+    <div class="d-swatch"><div class="chip" style="background:#1FA24A"></div><div class="meta"><div class="nm">Green</div><div class="hx">#1FA24A → <span style="color:#178A3E">#178A3E</span></div><div class="use">Accent. Action, active nav, primary button, “on-target”. Hover = green-d.</div></div></div>
+    <div class="d-swatch"><div class="chip" style="background:#0094D4"></div><div class="meta"><div class="nm">Blue</div><div class="hx">#0094D4</div><div class="use">Information, sync/queue, assigned assets. Never the primary CTA.</div></div></div>
+    <div class="d-swatch"><div class="chip" style="background:#FBC02D"></div><div class="meta"><div class="nm">Yellow</div><div class="hx">#FBC02D · text #9A6B00</div><div class="use">Warn, offline, watch/amber RAG. On light use #9A6B00 for legible text.</div></div></div>
+    <div class="d-swatch"><div class="chip" style="background:#E5484D"></div><div class="meta"><div class="nm">Red</div><div class="hx">#E5484D</div><div class="use">Error, destructive, breach, off-target RAG. Confirmation-gated.</div></div></div>
+  </div>
+
+  <div class="d-h3"><span class="n">soft fills</span> Tinted surfaces</div>
+  <div class="d-grid d-cols-4">
+    <div class="d-swatch"><div class="chip" style="background:rgba(31,162,74,.12)"></div><div class="meta"><div class="nm">green-soft</div><div class="hx">rgba(31,162,74,.12)</div></div></div>
+    <div class="d-swatch"><div class="chip" style="background:rgba(0,148,212,.12)"></div><div class="meta"><div class="nm">blue-soft</div><div class="hx">rgba(0,148,212,.12)</div></div></div>
+    <div class="d-swatch"><div class="chip" style="background:rgba(251,192,45,.16)"></div><div class="meta"><div class="nm">yellow-soft</div><div class="hx">rgba(251,192,45,.16)</div></div></div>
+    <div class="d-swatch"><div class="chip" style="background:rgba(229,72,77,.12)"></div><div class="meta"><div class="nm">red-soft</div><div class="hx">rgba(229,72,77,.12)</div></div></div>
+  </div>
+
+  <div class="d-h3"><span class="n">neutrals</span> Light theme surfaces &amp; ink</div>
+  <table class="d-table">
+    <thead><tr><th>Token</th><th>Value</th><th>Role</th></tr></thead>
+    <tbody>
+      <tr><td><span class="d-tok">--bg</span></td><td><b>#EEF1F3</b></td><td>App canvas behind cards</td></tr>
+      <tr><td><span class="d-tok">--surface</span></td><td><b>#FFFFFF</b></td><td>Card / panel / sidebar surface</td></tr>
+      <tr><td><span class="d-tok">--surface-2</span></td><td><b>#F6F8F9</b></td><td>Inset fields, table hover, tiles</td></tr>
+      <tr><td><span class="d-tok">--text</span></td><td><b>#15191D</b></td><td>Primary ink</td></tr>
+      <tr><td><span class="d-tok">--muted</span></td><td><b>#5C6770</b></td><td>Secondary text, labels</td></tr>
+      <tr><td><span class="d-tok">--faint</span></td><td><b>#8A949C</b></td><td>Tertiary, captions, table headers</td></tr>
+      <tr><td><span class="d-tok">--border</span></td><td><b>#E2E7EA</b></td><td>Card &amp; control borders</td></tr>
+      <tr><td><span class="d-tok">--border-2</span></td><td><b>#EDF0F2</b></td><td>Quiet inner dividers (rows)</td></tr>
+    </tbody>
+  </table>
+  <div class="d-note"><div class="b"></div><div><b>Colour-with-intent rule (from the audit pass).</b> Green is reserved for action &amp; the single active/primary target on a surface; decorative accents are muted to <span class="d-tok">--faint</span>. One clear primary per surface — secondary buttons stay neutral so the green primary reads as <i>the</i> decision.</div></div>
+</section>
+
+<section id="type" class="d-sec">
+  <div class="d-eyebrow">Foundations · F2</div>
+  <h2 class="d-h2">Typography</h2>
+  <p class="d-p"><b>IBM Plex Sans</b> for everything structural; <b>IBM Plex Mono</b> (<span class="d-tok">--mono</span>, tabular figures) for every number, ID, formula, timestamp and code. Tight negative tracking on large weights; generous line-height (1.45) on body.</p>
+
+  <div class="d-type"><div class="sample" style="font-size:38px;font-weight:700;letter-spacing:-.025em;line-height:1.1">Human capital, operational</div><div class="meta">Display · login h1<br>38 / 700 / −.025em</div></div>
+  <div class="d-type"><div class="sample" style="font-size:18px;font-weight:680;letter-spacing:-.02em">Workforce Overview</div><div class="meta">Page title · <span class="d-tok" style="font-size:10px">.page-t</span><br>18 / 680 / −.02em</div></div>
+  <div class="d-type"><div class="sample" style="font-family:var(--d-mono);font-size:30px;font-weight:600;letter-spacing:-.035em">1,077</div><div class="meta">KPI value · mono<br>30 / 600 / −.035em</div></div>
+  <div class="d-type"><div class="sample" style="font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--d-mut)">Section heading</div><div class="meta">Section · <span class="d-tok" style="font-size:10px">.sec-h h2</span><br>14 / 700 / .06em · UPPER</div></div>
+  <div class="d-type"><div class="sample" style="font-size:14px;font-weight:650;letter-spacing:-.005em">Card title</div><div class="meta">Card head · <span class="d-tok" style="font-size:10px">.card-h h3</span><br>14 / 650</div></div>
+  <div class="d-type"><div class="sample" style="font-size:15px;font-weight:400;line-height:1.45">Body copy sets at fourteen on the product surface, roomy line-height for scan-reading dense tables and forms.</div><div class="meta">Body<br>14 / 400 / 1.45</div></div>
+  <div class="d-type"><div class="sample" style="font-size:13px">Table cell text · <span style="font-family:var(--d-mono)">TMCL-MW-4821</span></div><div class="meta">Table / mono meta<br>13 · 10–11 mono</div></div>
+  <div class="d-type"><div class="sample" style="font-family:var(--d-mono);font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--d-faint)">EYEBROW / FIELD LABEL</div><div class="meta">Label / eyebrow<br>10.5 / 600 / .06em</div></div>
+</section>
+
+<section id="space" class="d-sec">
+  <div class="d-eyebrow">Foundations · F3</div>
+  <h2 class="d-h2">Spacing &amp; layout</h2>
+  <p class="d-p">One padding token drives density; the console is a <b>bento grid of cards</b> over a scrolling content region. Compact density tightens padding without touching type.</p>
+  <div class="d-grid d-cols-3">
+    <div class="d-spec"><div class="k">--pad</div><div class="v">20px <small>· compact 13px</small></div></div>
+    <div class="d-spec"><div class="k">content padding</div><div class="v">26 / 28px</div></div>
+    <div class="d-spec"><div class="k">grid gap</div><div class="v">18px <small>· cards 16</small></div></div>
+    <div class="d-spec"><div class="k">card-h padding</div><div class="v">15 / 20px</div></div>
+    <div class="d-spec"><div class="k">table cell</div><div class="v">12.5 / 20px</div></div>
+    <div class="d-spec"><div class="k">sidebar width</div><div class="v">244px</div></div>
+  </div>
+  <div class="d-note"><div class="b"></div><div><b>Layout primitive.</b> Screen bodies are <span class="d-tok">.content</span> (scroll region) → <span class="d-tok">.sec-h</span> group labels → <span class="d-tok">.grid</span> bento of <span class="d-tok">.card</span>. Rows/groups use flex/grid <span class="d-tok">gap</span> — never inline-flow whitespace. Each screen's redline names its grid track counts rather than pixel widths.</div></div>
+</section>
+
+<section id="radius" class="d-sec">
+  <div class="d-eyebrow">Foundations · F4</div>
+  <h2 class="d-h2">Radius &amp; elevation</h2>
+  <div class="d-grid d-cols-3">
+    <div class="d-swatch"><div class="chip" style="background:#fff;display:flex;align-items:center;justify-content:center"><div style="width:80px;height:40px;background:#EEF1F3;border:1px solid #E2E7EA;border-radius:10px"></div></div><div class="meta"><div class="nm">--r · 10px</div><div class="use">Cards, panels, inputs, buttons.</div></div></div>
+    <div class="d-swatch"><div class="chip" style="background:#fff;display:flex;align-items:center;justify-content:center"><div style="width:80px;height:40px;background:#EEF1F3;border:1px solid #E2E7EA;border-radius:7px"></div></div><div class="meta"><div class="nm">--r-sm · 7px</div><div class="use">Nav items, small controls, chips-with-border.</div></div></div>
+    <div class="d-swatch"><div class="chip" style="background:#fff;display:flex;align-items:center;justify-content:center"><div style="width:80px;height:26px;background:#EEF1F3;border:1px solid #E2E7EA;border-radius:30px"></div></div><div class="meta"><div class="nm">pill · 20–30px</div><div class="use">Tags, status pills, filter pills, badges.</div></div></div>
+  </div>
+  <div class="d-grid d-cols-2">
+    <div class="d-swatch"><div class="chip" style="background:#EEF1F3;display:flex;align-items:center;justify-content:center"><div style="width:70%;height:52px;background:#fff;border-radius:10px;box-shadow:0 1px 2px rgba(16,24,32,.05),0 1px 3px rgba(16,24,32,.04)"></div></div><div class="meta"><div class="nm">--shadow · resting card</div><div class="hx">0 1px 2px /.05 · 0 1px 3px /.04</div></div></div>
+    <div class="d-swatch"><div class="chip" style="background:#EEF1F3;display:flex;align-items:center;justify-content:center"><div style="width:70%;height:52px;background:#fff;border-radius:10px;box-shadow:0 6px 24px rgba(16,24,32,.10)"></div></div><div class="meta"><div class="nm">--shadow-l · lifted</div><div class="hx">0 6px 24px /.10 · drawers, modals, hover</div></div></div>
+  </div>
+</section>
+
+<section id="motion" class="d-sec">
+  <div class="d-eyebrow">Foundations · F5</div>
+  <h2 class="d-h2">Motion</h2>
+  <p class="d-p">Motion is functional and short. Interaction feedback is 120–150ms; overlays use a soft decelerate. Everything decorative is gated behind <span class="d-tok">prefers-reduced-motion</span>.</p>
+  <table class="d-table">
+    <thead><tr><th>Use</th><th>Duration / curve</th><th>Where</th></tr></thead>
+    <tbody>
+      <tr><td><b>Control feedback</b></td><td>.12s · ease</td><td>Nav hover, button, tag active</td></tr>
+      <tr><td><b>Border / shadow shift</b></td><td>.15s</td><td>Focus-within, KPI-nav hover lift</td></tr>
+      <tr><td><b>Drawer in</b></td><td>.22s · cubic-bezier(.2,.8,.2,1)</td><td>Profile / detail drawer slide-in</td></tr>
+      <tr><td><b>Backdrop / modal fade</b></td><td>.15s</td><td>Drawer &amp; report-preview backdrop</td></tr>
+      <tr><td><b>Toast in</b></td><td>.2s · translateY</td><td>Confirmation toasts</td></tr>
+      <tr><td><b>Skeleton shimmer</b></td><td>1.2s · linear loop</td><td>Loading state</td></tr>
+      <tr><td><b>Geofence / sync pulse</b></td><td>2.4–3s loop</td><td>Attendance radar, sync dot — RM-gated</td></tr>
+      <tr><td><b>ID-card flip</b></td><td>.7s · cubic-bezier(.2,.75,.2,1)</td><td>Smart-ID front/back</td></tr>
+    </tbody>
+  </table>
+  <div class="d-note flag"><div class="b"></div><div><span class="tag">Slide/PDF safe</span> Entrance animations must animate <i>from</i> hidden with the visible end-state as base, gated on active + reduced-motion — so print, export and RM users see content, not an <span class="d-tok">opacity:0</span> pre-frame. No infinite decorative loops on content.</div></div>
+</section>
+
+<section id="modes" class="d-sec">
+  <div class="d-eyebrow">Foundations · F6</div>
+  <h2 class="d-h2">Themes &amp; surfaces</h2>
+  <p class="d-p">Every screen must render across <b>4 themes × 4 surfaces</b> (AC-UNI-03), driven by <span class="d-tok">[data-theme]</span> and <span class="d-tok">[data-surface]</span> attributes on the root. Reduced-transparency and Kiosk are first-class, not afterthoughts.</p>
+  <div class="d-grid d-cols-4">
+    <div class="d-swatch"><div class="chip" style="background:#EEF1F3"></div><div class="meta"><div class="nm">Light</div><div class="use">Default. Values in F1.</div></div></div>
+    <div class="d-swatch"><div class="chip" style="background:#0C1115"></div><div class="meta"><div class="nm">Dark</div><div class="use">bg #0C1115 · surface #141B20 · text #E7EDF1</div></div></div>
+    <div class="d-swatch"><div class="chip" style="background:linear-gradient(135deg,#0E4D34,#08311E 60%,#0a2a4a)"></div><div class="meta"><div class="nm">Liquid Glass</div><div class="use">Translucent surfaces, 16px blur, tinted gradient bg.</div></div></div>
+    <div class="d-swatch"><div class="chip" style="background:#06271A"></div><div class="meta"><div class="nm">Reduced-transp.</div><div class="use">Opaque high-contrast green; no blur (accessibility).</div></div></div>
+  </div>
+  <table class="d-table">
+    <thead><tr><th>Surface</th><th>Frame</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><b>Desktop</b> <span class="d-tok dim">console</span></td><td>1120 × 660</td><td>Sidebar app shell, multi-column bento.</td></tr>
+      <tr><td><b>Tablet</b></td><td>760 × 600</td><td>Grids collapse to 2-up; sidebar → top-nav variant permitted.</td></tr>
+      <tr><td><b>Mobile</b> <span class="d-tok dim">ESS</span></td><td>390 × 760</td><td>Single column, 44px min hit target, bottom-safe padding.</td></tr>
+      <tr><td><b>Kiosk</b></td><td>720 × 840</td><td>Larger type (17px base), roomier punch/roster targets, assisted flows.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="diverge" class="d-sec">
+  <div class="d-eyebrow">Foundations · F7</div>
+  <h2 class="d-h2">Divergence flags <span style="font-size:14px;color:var(--d-yellow);font-family:var(--d-mono);letter-spacing:0">styles.css = canonical</span></h2>
+  <p class="d-p">The approved flow prototypes drifted from <span class="d-tok dim">styles.css</span> in a few token values. Build to the <b>canonical</b> column; treat the flow kit as visually approved but standardise these on the way into production.</p>
+  <table class="d-table">
+    <thead><tr><th>Token</th><th>Canonical (styles.css)</th><th>Flow kits drew</th><th>Resolution</th></tr></thead>
+    <tbody>
+      <tr><td><b>Card radius</b></td><td><span class="d-tok">--r</span> 10 · <span class="d-tok">--r-sm</span> 7</td><td>12–16px on cards; 30px mobile bezel, 18px frame</td><td>Content radius → <b>10/7</b>. Larger radii are <i>surface chrome</i> (device bezel, frame), not content.</td></tr>
+      <tr><td><b>Resting shadow</b></td><td>2-layer <span class="d-tok">--shadow</span> (.05/.04)</td><td>single <span class="d-tok">0 8px 30px /.08</span></td><td>Adopt canonical 2-layer for resting cards; reserve the deeper drop for <span class="d-tok">--shadow-l</span> (modals/drawers).</td></tr>
+      <tr><td><b>State primitives</b></td><td>— not present —</td><td>banner · note · center · seal · skelrow defined per-flow</td><td><span class="tag" style="color:var(--d-yellow)">promote</span> Lift the flow-kit state components into <span class="d-tok dim">styles.css</span> so every surface shares one empty/loading/error/offline/success vocabulary.</td></tr>
+      <tr><td><b>Themes</b></td><td>Light · Dark only</td><td>+ Glass + Reduced-transp.</td><td>Add the Glass &amp; Reduced token blocks (already authored in the flows) to the canonical sheet.</td></tr>
+      <tr><td><b>Surface param</b></td><td>desktop-shaped (fixed sidebar)</td><td><span class="d-tok">[data-surface]</span> desk/tab/mob/kiosk</td><td>Parametrise the canonical shell on <span class="d-tok">[data-surface]</span> as the flows do.</td></tr>
+      <tr><td><b>Field kit</b></td><td>login fields only (<span class="d-tok">.lf-*</span>)</td><td>general <span class="d-tok">.field</span> / <span class="d-tok">.fg</span></td><td>Promote the general form-field kit to canonical for all console + ESS forms.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+
+<!-- ═══════════════ COMPONENTS ═══════════════ -->
+<section id="c-nav" class="d-sec">
+  <div class="d-eyebrow">Components · K1</div>
+  <h2 class="d-h2">Navigation</h2>
+  <p class="d-p">The console shell is a <b>244px left sidebar</b> capped by a 3px tricolor rule (green/yellow/blue), grouped nav with uppercase group labels, one <b>coloured active item</b> (green-soft fill), neutral hovers, and a pinned system-status + user chip at the foot. A top-nav variant (<span class="d-tok">[data-nav="top"]</span>) is permitted on tablet.</p>
+  <div class="d-demo-wrap">
+    <div class="d-demo-bar">.side · .navgrp · .navitem — default / hover / active / badge</div>
+    <div class="demo on-white" style="max-width:300px">
+      <div style="height:3px;border-radius:3px;background:linear-gradient(90deg,#1FA24A 0 34%,#FBC02D 34% 67%,#0094D4 67% 100%);margin-bottom:14px"></div>
+      <div class="navgrp">Workforce</div>
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <button class="navitem on"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Overview</button>
+        <button class="navitem"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Directory</button>
+        <button class="navitem"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>Approvals<span class="badge">4</span></button>
+      </div>
+    </div>
+  </div>
+  <div class="d-note"><div class="b"></div><div><b>Active = one item, green.</b> <span class="d-tok">.navitem.on</span> uses <span class="d-tok">--accent-soft</span> fill + accent text; hovers stay neutral (<span class="d-tok">--surface-2</span>). Unread counts ride a red <span class="d-tok">.badge</span> that flips to accent when the item is active.</div></div>
+</section>
+
+<section id="c-card" class="d-sec">
+  <div class="d-eyebrow">Components · K2</div>
+  <h2 class="d-h2">Cards &amp; bento grid</h2>
+  <p class="d-p">The card is the atom of every console screen: <span class="d-tok">--surface</span> on <span class="d-tok">--border</span>, radius <span class="d-tok">--r</span>, resting <span class="d-tok">--shadow</span>. An optional header (<span class="d-tok">.card-h</span> with 14/650 title + right-aligned meta) sits over a <span class="d-tok">--border-2</span> divider; body pads to <span class="d-tok">--pad</span>. Cards tile in a <span class="d-tok">.grid</span> with <span class="d-tok">gap:18px</span>.</p>
+  <div class="d-demo-wrap">
+    <div class="d-demo-bar">.grid → .card / .card-h / .card-p</div>
+    <div class="demo">
+      <div class="grid" style="grid-template-columns:1.4fr 1fr">
+        <div class="card"><div class="card-h"><h3>Headcount by site</h3><span class="meta">4 sites</span></div><div class="card-p"><div class="hbar-row"><span>Mwadui</span><span class="track"><i style="width:72%;background:#1FA24A"></i></span><span class="num">612</span></div><div class="hbar-row"><span>Head Office</span><span class="track"><i style="width:40%;background:#1FA24A"></i></span><span class="num">248</span></div><div class="hbar-row"><span>Nzega</span><span class="track"><i style="width:26%;background:#1FA24A"></i></span><span class="num">147</span></div></div></div>
+        <div class="card"><div class="kpi"><div class="lab"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Active headcount</div><div class="val num">1,077</div><div class="sub"><span class="trend up">▲ 2.1%</span> vs last period</div></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="d-note"><div class="b"></div><div><b>Bento, not columns.</b> Each screen composes cards of mixed span in one <span class="d-tok">.grid</span> — the per-screen redline names the track template (e.g. “<span class="d-tok">1.4fr / 1fr</span>”, “<span class="d-tok">repeat(3,1fr)</span>”). Group cards under a <span class="d-tok">.sec-h</span> label for rhythm.</div></div>
+</section>
+
+<section id="c-kpi" class="d-sec">
+  <div class="d-eyebrow">Components · K3</div>
+  <h2 class="d-h2">KPI tile</h2>
+  <p class="d-p">Two related forms. The <b>dashboard tile</b> (<span class="d-tok">.kpi</span>) — label + big mono value + trend sub. The <b>scorecard card</b> (<span class="d-tok">.kcard</span>, see <a href="#c3">C3</a>) adds a RAG left-border, a status pill, and a footer carrying <b>value · formula · target</b>. Every KPI names its source; an unavailable KPI <b>names the missing input</b> rather than showing a blank.</p>
+  <div class="d-demo-wrap">
+    <div class="d-demo-bar">.kpi dashboard tile · navigable variant</div>
+    <div class="demo">
+      <div class="grid" style="grid-template-columns:repeat(3,1fr)">
+        <div class="card"><div class="kpi"><div class="lab">Turnover (rolling 12m)</div><div class="val num">8.4<small>%</small></div><div class="sub"><span class="trend dn">▼ 0.6%</span> improving</div></div></div>
+        <div class="card kpi-nav"><div class="kpi"><div class="lab"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Attendance rate</div><div class="val num">96.2<small>%</small></div><div class="kpi-src">source · Attendance (E3)</div></div></div>
+        <div class="card"><div class="kpi"><div class="lab">Leave liability</div><div class="val num">TZS 41.2<small>M</small></div><div class="sub">active employees only</div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="c-table" class="d-sec">
+  <div class="d-eyebrow">Components · K4</div>
+  <h2 class="d-h2">Tables</h2>
+  <p class="d-p">Uppercase <span class="d-tok">--faint</span> headers (10.5/.06em), roomy rows on quiet <span class="d-tok">--border-2</span> dividers, <span class="d-tok">--surface-2</span> row hover. Names carry a <b>mini-avatar</b> (<span class="d-tok">.ma</span>); numeric columns are mono/tabular and right-set. Clickable rows tint the name green on hover and open the profile drawer. Large sets (5k+) virtualise (UNI-02).</p>
+  <div class="d-demo-wrap">
+    <div class="d-demo-bar">table.tbl · .rowname/.ma · status .tag · clickable row</div>
+    <div class="demo on-white">
+      <table class="tbl">
+        <thead><tr><th>Employee</th><th>Number</th><th>Site</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr class="clickable"><td><span class="rowname"><span class="ma" style="background:#1FA24A">JM</span><span class="name">Joseph Mlimani</span></span></td><td class="num muted">TMCL-MW-4821</td><td class="muted">Mwadui</td><td><span class="tag t-green"><span class="dotbadge" style="background:#1FA24A"></span>Active</span></td></tr>
+          <tr class="clickable"><td><span class="rowname"><span class="ma" style="background:#0094D4">NW</span><span class="name">Neema Mwakalukwa</span></span></td><td class="num muted">TMCL-HO-0142</td><td class="muted">Head Office</td><td><span class="tag t-yellow">Suspended</span></td></tr>
+          <tr class="clickable"><td><span class="rowname"><span class="ma" style="background:#5C6770">PK</span><span class="name">Peter Komba</span></span></td><td class="num muted">TMCL-MW-2210</td><td class="muted">Mwadui</td><td><span class="tag t-grey">Terminated</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="c-form" class="d-sec">
+  <div class="d-eyebrow">Components · K5</div>
+  <h2 class="d-h2">Forms</h2>
+  <p class="d-p">Fields sit in a responsive <span class="d-tok">.fg</span> grid (2-up desktop, 1-up mobile). Labels are 11/600 <span class="d-tok">--muted</span>; required marks are red. Inputs use inset <span class="d-tok">--surface-2</span> with accent focus. Generated identifiers render <b>non-editable</b>. Segmented choices use bordered tiles that fill with the choice's semantic colour.</p>
+  <div class="d-demo-wrap">
+    <div class="d-demo-bar">.field · .fg · required · disabled generated id</div>
+    <div class="demo on-white">
+      <div class="fg">
+        <div class="field"><label>First name <span class="req">*</span></label><input value="Joseph"/></div>
+        <div class="field"><label>Employee number <span class="lbl-sm" style="display:inline;margin-left:4px">generated · non-editable</span></label><input value="TMCL-MW-4821" disabled style="font-family:var(--d-mono)"/></div>
+        <div class="field"><label>Site <span class="req">*</span></label><select><option>Mwadui</option></select></div>
+        <div class="field"><label>Rotation</label><select><option>7 × 7</option></select></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="c-button" class="d-sec">
+  <div class="d-eyebrow">Components · K6</div>
+  <h2 class="d-h2">Buttons</h2>
+  <p class="d-p">One primary per surface (green fill). Secondary is neutral-bordered; ghost is chrome-free; destructive is red text that fills red-soft on hover. Small variant for in-row actions.</p>
+  <div class="d-demo-wrap">
+    <div class="d-demo-bar">.btn.primary / .btn / .btn.ghost / .btn.danger / .btn.sm</div>
+    <div class="demo on-white"><div class="row">
+      <button class="btn primary">Approve request</button>
+      <button class="btn">Cancel</button>
+      <button class="btn ghost">View history</button>
+      <button class="btn danger">Terminate</button>
+      <button class="btn sm">Assign</button>
+    </div></div>
+  </div>
+</section>
+
+<section id="c-tag" class="d-sec">
+  <div class="d-eyebrow">Components · K7</div>
+  <h2 class="d-h2">Tags &amp; status</h2>
+  <p class="d-p">Semantic soft-fill pills, no competing borders. Green = healthy/active/on-target, blue = info/assigned/syncing, yellow = watch/pending/offline, red = breach/off-target, grey = neutral/returned. A monospace <span class="d-tok">.flag</span> pill marks <b>[TBC]/[Open]</b> decisions still in review.</p>
+  <div class="d-demo-wrap">
+    <div class="d-demo-bar">.tag t-green/t-blue/t-yellow/t-red/t-grey · flag pill</div>
+    <div class="demo on-white"><div class="row">
+      <span class="tag t-green"><span class="dotbadge" style="background:#1FA24A"></span>On target</span>
+      <span class="tag t-blue">Assigned</span>
+      <span class="tag t-yellow">Pending</span>
+      <span class="tag t-red">Breach</span>
+      <span class="tag t-grey">Returned</span>
+      <span class="tag" style="font-family:var(--d-mono);background:rgba(251,192,45,.18);color:#9A6B00;border:1px solid rgba(251,192,45,.5)">● SS-3 Open</span>
+    </div></div>
+  </div>
+</section>
+
+<section id="c-state" class="d-sec">
+  <div class="d-eyebrow">Components · K8</div>
+  <h2 class="d-h2">States</h2>
+  <p class="d-p">Every screen must draw the full state set (AC-UNI-01). These five primitives cover the universal cases; screens add their own nets (validation-failed, totals-mismatch, coverage-warn, low-accuracy, conflict, all-clear, drafted, self). <span class="tag" style="font-family:var(--d-mono);font-size:10px;background:rgba(251,192,45,.18);color:#9A6B00">promote to canonical</span> — these live in the flow kit today (see <a href="#diverge">F7</a>).</p>
+  <div class="d-grid d-cols-2">
+    <div class="d-demo-wrap"><div class="d-demo-bar">Loading · .skelrow shimmer</div><div class="demo on-white"><div class="stk"><div class="skelrow" style="width:60%"></div><div class="skelrow"></div><div class="skelrow" style="width:85%"></div><div class="skelrow" style="width:70%"></div></div></div></div>
+    <div class="d-demo-wrap"><div class="d-demo-bar">Empty · .center</div><div class="demo on-white"><div class="center"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></span><h3>No records yet</h3><p>Nothing to show for this scope. New entries appear here as they're created.</p></div></div></div>
+    <div class="d-demo-wrap"><div class="d-demo-bar">Error · .banner.err + retry</div><div class="demo on-white"><div class="stk"><div class="banner err"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg><div><b>Couldn't load.</b> The request failed — nothing was changed.</div></div><button class="btn primary" style="align-self:flex-start"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5"/></svg>Retry</button></div></div></div>
+    <div class="d-demo-wrap"><div class="d-demo-bar">No-permission · .center.err (lock + why)</div><div class="demo on-white"><div class="center"><span class="ic err"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="11" width="14" height="9" rx="1"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span><h3>Not available to your role</h3><p>This module is outside your access. Field is absent, not masked.</p><div class="why">viewer role · R03</div></div></div></div>
+    <div class="d-demo-wrap"><div class="d-demo-bar">Offline · .banner.off (queued)</div><div class="demo on-white"><div class="banner off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 1l22 22M16.7 11.1A6 6 0 0 0 5 12M12 20h.01"/></svg><div><b>Offline.</b> Changes are queued and will sync when the connection returns. Showing last-synced data.</div></div></div></div>
+    <div class="d-demo-wrap"><div class="d-demo-bar">Success · .seal</div><div class="demo on-white"><div class="seal"><span class="disc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg></span><h3>Request approved</h3><p>The employee has been notified and the audit chain extended.</p></div></div></div>
+  </div>
+</section>
+
+
+<!-- ═══════════════ CONSOLE SCREENS ═══════════════ -->
+<div class="d-sec" style="padding-bottom:0"><div class="d-eyebrow">Track A</div><h2 class="d-h2">Console — desktop</h2><p class="d-lead">Twelve console screens. Each embed is the live approved prototype; use its switcher (top strip) to walk every state / theme / surface. Redlines reference tokens, not pixels.</p></div>
+
+<!-- C1 LOGIN -->
+<section id="c1" class="d-sec">
+  <div class="d-h3"><span class="n">C1</span>Login — Console MFA + Field PIN</div>
+  <div class="d-meta"><span class="d-pill file">HCMOS Auth Flow.html</span><span class="d-pill role">R01–R13</span><span class="d-pill ac">AUTH-01/03/04/06</span></div>
+  <div class="d-vp">
+    <div class="d-vp-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="t">HCMOS Auth Flow.html · console · populated · light</span><a class="open" href="HCMOS Auth Flow.html" target="_blank" rel="noopener">open ↗</a></div>
+    <iframe class="d-frame" data-src="HCMOS Auth Flow.html" data-screen="console" data-state="populated" data-theme="light" data-surface="desktop"></iframe>
+  </div>
+  <div class="d-hint"><b>In the embed:</b> switch screen (Console MFA · Field PIN · Password reset · PIN reset · Role landing), state, theme &amp; surface.</div>
+  <div class="d-rl">
+    <div class="d-panel"><h4><span class="ic"></span>Layout — split canvas</h4>
+      <ul class="d-list">
+        <li><b>Two-panel <span class="d-tok">.login</span></b> grid <span class="d-tok">1.05fr / 1fr</span>: left brand panel (dark #0C1115 with green/blue radial wash + tricolor flag), right centred form (<span class="d-tok">.lf-inner</span> max 380).</li>
+        <li>Below 880px the brand panel drops; form fills full width.</li>
+        <li>Field PIN &amp; Kiosk collapse to a single centred card; PIN uses a large keypad target set (44px+ / kiosk larger).</li>
+        <li>Role landing = <span class="d-tok">.lf-roles</span> scroll list, one selectable <span class="d-tok">.lf-role</span> per R01–R13, accent-bordered when chosen.</li>
+      </ul>
+    </div>
+    <div class="d-panel"><h4><span class="ic"></span>Components &amp; rules</h4>
+      <ul class="d-list">
+        <li>Fields = <span class="d-tok">.lf-field</span> / <span class="d-tok">.lf-input</span> (inset, accent focus); primary <span class="d-tok">.lf-go</span> full-width green.</li>
+        <li><b>Error reveals no factor</b> — generic “credentials didn't match”, never which of user/password/PIN failed.</li>
+        <li>Lockout policy value is <span class="tag" style="font-family:var(--d-mono);font-size:10px;background:rgba(251,192,45,.18);color:#9A6B00">[TBC]</span> — draw the locked-out state, flag the threshold.</li>
+        <li>Reset flows kill the session; success routes to the role landing (least-privilege per A2).</li>
+      </ul>
+    </div>
+  </div>
+  <div class="d-states">
+    <div class="d-state"><b>empty</b>Clean form, no input.</div>
+    <div class="d-state"><b>loading</b>Submit → spinner on <span class="d-tok">.lf-go</span>.</div>
+    <div class="d-state"><b>populated</b>Filled, ready to submit.</div>
+    <div class="d-state"><b>large-data</b>Tenant / shared-kiosk picker list.</div>
+    <div class="d-state k"><b>error</b>Generic fail — no factor revealed.</div>
+    <div class="d-state k"><b>no-permission</b>Terminated console / unregistered device.</div>
+    <div class="d-state k"><b>offline</b>Console blocked; field PIN works offline + syncs.</div>
+    <div class="d-state"><b>success</b>Routed to role landing.</div>
+  </div>
+</section>
+
+<!-- C2 WORKFORCE OVERVIEW -->
+<section id="c2" class="d-sec">
+  <div class="d-h3"><span class="n">C2</span>Workforce Overview — console landing</div>
+  <div class="d-meta"><span class="d-pill file">HCMOS Workforce Overview.html</span><span class="d-pill role">R01–R12 · R03/R06 site-scoped · R14 read-only</span><span class="d-pill ac">UNI-01 · AUTH-06 · KPI-ref</span></div>
+  <div class="d-vp">
+    <div class="d-vp-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="t">HCMOS Workforce Overview.html · overview · populated · R07</span><a class="open" href="HCMOS Workforce Overview.html" target="_blank" rel="noopener">open ↗</a></div>
+    <iframe class="d-frame" data-src="HCMOS Workforce Overview.html" data-screen="overview" data-state="populated" data-role="R07" data-theme="light" data-surface="desktop"></iframe>
+  </div>
+  <div class="d-hint"><b>In the embed:</b> switch viewer role (site-scoped R03/R06 see only Mwadui; R14 sees aggregates, no approvals) &amp; state.</div>
+  <div class="d-rl">
+    <div class="d-panel"><h4><span class="ic"></span>Bento — role-scoped landing</h4>
+      <ul class="d-list">
+        <li>Sidebar shell + <span class="d-tok">.topbar</span> (title/subtitle, search, site-filter pills, role banner).</li>
+        <li>Body: <b>KPI strip</b> <span class="d-tok">grid repeat(4,1fr)</span> of navigable <span class="d-tok">.kpi-nav</span> tiles → deep-link to their source module.</li>
+        <li>Then a mixed bento: headcount-by-site bars, site map, activity feed, outstanding-approvals — cards of varied span in one <span class="d-tok">.grid</span> gap 18.</li>
+        <li><b>Site-scoped roles</b> (R03/R06) see only their site's cards &amp; counts; R14 sees labelled aggregates with the approvals action surface removed.</li>
+      </ul>
+    </div>
+    <div class="d-panel"><h4><span class="ic"></span>Components &amp; rules</h4>
+      <ul class="d-list">
+        <li>KPI tiles name their source (<span class="d-tok">.kpi-src</span>) and hover-lift; every figure is mono/tabular.</li>
+        <li>Leavers excluded from live populations (LVR-02); an unavailable KPI names the missing input, not a blank.</li>
+        <li>R13 (field) has no console landing → routes to ESS home.</li>
+        <li>Offline shows last-synced with the offline chip in the topbar.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="d-states">
+    <div class="d-state"><b>empty</b>New tenant / no data in scope.</div>
+    <div class="d-state"><b>loading</b>Skeleton KPI strip + cards.</div>
+    <div class="d-state"><b>populated</b>Full bento, role-scoped.</div>
+    <div class="d-state"><b>large-data</b>Multi-site org, virtualised feeds.</div>
+    <div class="d-state"><b>error</b>Card-level retry, shell intact.</div>
+    <div class="d-state k"><b>no-permission</b>R13 redirected to ESS.</div>
+    <div class="d-state k"><b>offline</b>Last-synced banner + chip.</div>
+    <div class="d-state"><b>success</b>Post-action toast return.</div>
+  </div>
+</section>
+
+<!-- C4 DIRECTORY -->
+<section id="c4" class="d-sec">
+  <div class="d-h3"><span class="n">C4</span>Employees directory</div>
+  <div class="d-meta"><span class="d-pill file">HCMOS Employee Master &amp; Lifecycle.html</span><span class="d-pill role">R02–R07 · R03/R06 site-scoped</span><span class="d-pill ac">EMP-02 · UNI-02</span></div>
+  <div class="d-vp">
+    <div class="d-vp-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="t">HCMOS Employee Master &amp; Lifecycle.html · directory · populated · R07</span><a class="open" href="HCMOS Employee Master &amp; Lifecycle.html" target="_blank" rel="noopener">open ↗</a></div>
+    <iframe class="d-frame" data-src="HCMOS Employee Master &amp; Lifecycle.html" data-screen="directory" data-state="populated" data-role="R07" data-theme="light" data-surface="desktop"></iframe>
+  </div>
+  <div class="d-hint"><b>In the embed:</b> switch to Profile (C5), or set a site-scoped role to watch the list shrink to one site; large-data shows the 5k virtualised list.</div>
+  <div class="d-rl">
+    <div class="d-panel"><h4><span class="ic"></span>Layout</h4>
+      <ul class="d-list">
+        <li>Topbar search + site-filter <span class="d-tok">.pill</span> row over a single full-width <span class="d-tok">.card</span> holding <span class="d-tok">table.tbl</span>.</li>
+        <li>Columns: employee (avatar + name), number (mono), site, role, lifecycle status tag, action.</li>
+        <li>Rows are <span class="d-tok">.clickable</span> → open the C5 profile drawer.</li>
+        <li>5,000+ rows <b>virtualise</b> (UNI-02); pager/rows-count in the card footer.</li>
+      </ul>
+    </div>
+    <div class="d-panel"><h4><span class="ic"></span>Components &amp; rules</h4>
+      <ul class="d-list">
+        <li>Lifecycle status via <span class="d-tok">.tag</span>: active (green) · suspended (yellow) · terminated (grey) · rehired (blue).</li>
+        <li><b>Site scoping</b> (EMP-02): R03/R06 see only their site — enforced, not a filter default.</li>
+        <li>Number column is always <span class="d-tok">TMCL-&lt;LOC&gt;-&lt;SEQ&gt;</span>, mono, non-editable.</li>
+        <li>empty-vs-empty-match distinct: “no employees” ≠ “no rows for this search”.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="d-states">
+    <div class="d-state"><b>empty</b>No employees in scope.</div>
+    <div class="d-state k"><b>empty (no match)</b>Search cleared distinct copy.</div>
+    <div class="d-state"><b>loading</b>Skeleton rows.</div>
+    <div class="d-state"><b>populated</b>Directory table.</div>
+    <div class="d-state k"><b>large-data</b>5k virtualised.</div>
+    <div class="d-state"><b>error</b>Reload table.</div>
+    <div class="d-state k"><b>no-permission</b>Role outside R02–R07.</div>
+    <div class="d-state"><b>offline / success</b>Last-synced / post-edit.</div>
+  </div>
+</section>
+
+<!-- C5 PROFILE -->
+<section id="c5" class="d-sec">
+  <div class="d-h3"><span class="n">C5</span>Employee profile — drawer</div>
+  <div class="d-meta"><span class="d-pill file">HCMOS Employee Master &amp; Lifecycle.html</span><span class="d-pill role">R02–R07</span><span class="d-pill ac">EMP-01/03 · SOD-03 · A3</span></div>
+  <div class="d-vp">
+    <div class="d-vp-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="t">HCMOS Employee Master &amp; Lifecycle.html · profile · populated · R07</span><a class="open" href="HCMOS Employee Master &amp; Lifecycle.html" target="_blank" rel="noopener">open ↗</a></div>
+    <iframe class="d-frame" data-src="HCMOS Employee Master &amp; Lifecycle.html" data-screen="profile" data-state="populated" data-role="R07" data-theme="light" data-surface="desktop"></iframe>
+  </div>
+  <div class="d-hint"><b>In the embed:</b> switch the viewer role — confidential sections (pay/bank, medical, disciplinary) appear or vanish entirely by entitlement.</div>
+  <div class="d-rl">
+    <div class="d-panel"><h4><span class="ic"></span>Layout — right drawer</h4>
+      <ul class="d-list">
+        <li><span class="d-tok">.drawer-panel</span> 540px, slides in over a dimmed backdrop (<span class="d-tok">.drawer-backdrop</span>).</li>
+        <li>Header <span class="d-tok">.prof-head</span>: avatar/photo, name (21/700), role, status <span class="d-tok">.pchip</span> row, action buttons.</li>
+        <li>Body <span class="d-tok">.prof-sec</span> stack: identity, employment, documents, confidential blocks — each a titled section on quiet dividers, two-column <span class="d-tok">.prof-grid</span> field pairs.</li>
+      </ul>
+    </div>
+    <div class="d-panel"><h4><span class="ic"></span>Confidentiality — absent, not masked</h4>
+      <ul class="d-list">
+        <li><b>Pay / bank</b> → R07, R09, R11 only. <b>Medical / permits</b> → R05, R06, R10. <b>Disciplinary</b> → R05, R06, R07, R11.</li>
+        <li>Roles without entitlement: the section is <b>not rendered at all</b> — no masked placeholder, no “restricted” row (A3 / EMP-01).</li>
+        <li>Edits route to approval (EMP-03), not direct write; requester ≠ approver (SOD-03).</li>
+        <li>Document rows can be requested; a <span class="d-tok">.prof-req.done</span> confirms.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="d-states">
+    <div class="d-state"><b>empty</b>Incomplete profile stub.</div>
+    <div class="d-state"><b>loading</b>Skeleton drawer.</div>
+    <div class="d-state"><b>populated</b>Full profile, role-filtered.</div>
+    <div class="d-state"><b>large-data</b>Long document/history list.</div>
+    <div class="d-state"><b>error</b>Load-fail banner in drawer.</div>
+    <div class="d-state k"><b>no-permission</b>Confidential sections absent.</div>
+    <div class="d-state"><b>offline</b>Read-only last-synced.</div>
+    <div class="d-state"><b>success</b>Edit-requested toast.</div>
+  </div>
+</section>
+
+<!-- C3 KPI -->
+<section id="c3" class="d-sec">
+  <div class="d-h3"><span class="n">C3</span>KPI Scorecard — role-scoped</div>
+  <div class="d-meta"><span class="d-pill file">HCMOS KPI Scorecard.html</span><span class="d-pill role">R01–R12</span><span class="d-pill ac">KPI-01/02/03/04 · LIAB-03 · LVR-02</span></div>
+  <div class="d-vp">
+    <div class="d-vp-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="t">HCMOS KPI Scorecard.html · console · populated · R07</span><a class="open" href="HCMOS KPI Scorecard.html" target="_blank" rel="noopener">open ↗</a></div>
+    <iframe class="d-frame" data-src="HCMOS KPI Scorecard.html" data-screen="console" data-state="populated" data-role="R07" data-theme="light" data-surface="desktop"></iframe>
+  </div>
+  <div class="d-hint"><b>In the embed:</b> see the <span class="d-tok">not-available</span> and <span class="d-tok">flag-off</span> states — both distinct from empty &amp; no-permission — and the ESS “My KPIs” variant.</div>
+  <div class="d-rl">
+    <div class="d-panel"><h4><span class="ic"></span>Layout</h4>
+      <ul class="d-list">
+        <li><b>RAG summary bar</b> (<span class="d-tok">.ragbar</span>) up top: On / Watch / Off / N-A counts as pills.</li>
+        <li>Category headers (<span class="d-tok">.kcat</span>) group a <span class="d-tok">.kgrid repeat(3,1fr)</span> (2-up tablet/kiosk, 1-up mobile) of <span class="d-tok">.kcard</span>.</li>
+        <li>Each <span class="d-tok">.kcard</span> carries a <b>RAG left-border (4px)</b>, status pill, big mono value, and a footer with value · formula · target.</li>
+      </ul>
+    </div>
+    <div class="d-panel"><h4><span class="ic"></span>Rules</h4>
+      <ul class="d-list">
+        <li>Role-scoped set (A2/A3); counts (On/Watch/Off) stay internally consistent with the cards shown.</li>
+        <li><b>N/A names the input</b> (LIAB-03): a KPI missing data says which source is missing — never a blank or zero.</li>
+        <li>Leavers excluded from populations (LVR-02).</li>
+        <li><b>flag-off</b> = module disabled: panel greyed, no cards/RAG/counts — distinct from empty &amp; no-permission.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="d-states">
+    <div class="d-state"><b>empty</b>No KPIs configured.</div>
+    <div class="d-state"><b>loading</b>Skeleton cards.</div>
+    <div class="d-state"><b>populated</b>Full RAG scorecard.</div>
+    <div class="d-state"><b>large-data</b>Full catalogue.</div>
+    <div class="d-state"><b>error / offline</b>Retry / last-synced.</div>
+    <div class="d-state k"><b>no-permission</b>Role outside set.</div>
+    <div class="d-state k"><b>not-available</b>KPI names its missing input.</div>
+    <div class="d-state k"><b>flag-off</b>Module disabled, greyed panel.</div>
+  </div>
+</section>
+
+<!-- C10 LEAVE -->
+<section id="c10" class="d-sec">
+  <div class="d-h3"><span class="n">C10</span>Leave &amp; attendance — approve + coverage</div>
+  <div class="d-meta"><span class="d-pill file">HCMOS Leave &amp; Liability Flow.html</span><span class="d-pill role">R01/R02/R03/R05/R06/R07</span><span class="d-pill ac">LV-03 · LR-6 · UNI-06 · SOD-01</span></div>
+  <div class="d-vp">
+    <div class="d-vp-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="t">HCMOS Leave &amp; Liability Flow.html · approve · populated · R07</span><a class="open" href="HCMOS Leave &amp; Liability Flow.html" target="_blank" rel="noopener">open ↗</a></div>
+    <iframe class="d-frame" data-src="HCMOS Leave &amp; Liability Flow.html" data-screen="approve" data-state="populated" data-role="R07" data-theme="light" data-surface="desktop"></iframe>
+  </div>
+  <div class="d-hint"><b>In the embed:</b> switch to Apply (E4) &amp; Liability (C16); watch the <span class="d-tok">coverage-warn</span> state gate the approve action.</div>
+  <div class="d-rl">
+    <div class="d-panel"><h4><span class="ic"></span>Layout — request detail</h4>
+      <ul class="d-list">
+        <li><span class="d-tok">.reqcard</span>: requester header (avatar + number), dates, balance impact, submission checks (<span class="d-tok">.chk</span> ok/warn/bad).</li>
+        <li><b>Coverage meter</b> (<span class="d-tok">.cov</span>) per role — a warn variant when a shift dips below minimum cover.</li>
+        <li>Approve / decline actions; a red-bordered <span class="d-tok">.ack</span> override panel appears only on a coverage warning.</li>
+      </ul>
+    </div>
+    <div class="d-panel"><h4><span class="ic"></span>Rules</h4>
+      <ul class="d-list">
+        <li><b>LR-6 coverage is warn-not-block</b>: approver may proceed but must tick the audited override (<span class="d-tok">.ackchk</span>) — the override is logged (UNI-06).</li>
+        <li>Maker ≠ checker (SOD-01): a requester can't approve their own leave.</li>
+        <li>Balances, 14-continuous cap and overlap checks surface as inline <span class="d-tok">.chk</span> rows.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="d-states">
+    <div class="d-state"><b>empty</b>No pending requests.</div>
+    <div class="d-state"><b>loading</b>Skeleton request card.</div>
+    <div class="d-state"><b>populated</b>Request awaiting decision.</div>
+    <div class="d-state"><b>large-data</b>Long approval queue.</div>
+    <div class="d-state"><b>error / offline</b>Retry / queued.</div>
+    <div class="d-state k"><b>no-permission</b>Non-approver role.</div>
+    <div class="d-state k"><b>coverage-warn</b>Below-cover → audited override.</div>
+    <div class="d-state"><b>success</b>Approved, requester notified.</div>
+  </div>
+</section>
+
+<!-- C16 LIABILITY -->
+<section id="c16" class="d-sec">
+  <div class="d-h3"><span class="n">C16</span>Payroll / leave liability</div>
+  <div class="d-meta"><span class="d-pill file">HCMOS Leave &amp; Liability Flow.html</span><span class="d-pill role">R07/R08/R09/R11</span><span class="d-pill ac">LIAB-01/02/03 · EX-2 · PC-1</span></div>
+  <div class="d-vp">
+    <div class="d-vp-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="t">HCMOS Leave &amp; Liability Flow.html · liability · populated · R07</span><a class="open" href="HCMOS Leave &amp; Liability Flow.html" target="_blank" rel="noopener">open ↗</a></div>
+    <iframe class="d-frame" data-src="HCMOS Leave &amp; Liability Flow.html" data-screen="liability" data-state="populated" data-role="R07" data-theme="light" data-surface="desktop"></iframe>
+  </div>
+  <div class="d-hint"><b>In the embed:</b> the <span class="d-tok">not-available</span> row names its missing input; leavers are excluded from the total.</div>
+  <div class="d-rl">
+    <div class="d-panel"><h4><span class="ic"></span>Layout</h4>
+      <ul class="d-list">
+        <li><span class="d-tok">.ltable</span> grid (name · days · daily rate · liability), right-set mono numerics.</li>
+        <li>A <span class="d-tok">.ltotal</span> footer with the big mono total and a <span class="d-tok">.formula</span> chip.</li>
+        <li>Excluded rows (<span class="d-tok">.lrow.excl</span>) dim; a <span class="d-tok">.lna</span> chip marks a row whose input is unavailable.</li>
+      </ul>
+    </div>
+    <div class="d-panel"><h4><span class="ic"></span>Rules — the money math</h4>
+      <ul class="d-list">
+        <li><b>daily = leave-pay base ÷ 30</b> (PC-1).</li>
+        <li><b>EX-2 (final):</b> base excludes Rotation + Night-Shift allowances and variable overtime.</li>
+        <li>Active employees only — leavers excluded (LVR-02).</li>
+        <li><b>NOT-AVAILABLE names the missing input</b> (LIAB-03); never a silent zero.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="d-states">
+    <div class="d-state"><b>empty</b>No liability in scope.</div>
+    <div class="d-state"><b>loading</b>Skeleton table.</div>
+    <div class="d-state"><b>populated</b>Register + total.</div>
+    <div class="d-state"><b>large-data</b>Full workforce.</div>
+    <div class="d-state"><b>error / offline</b>Retry / last-synced.</div>
+    <div class="d-state k"><b>no-permission</b>Non pay-visibility role.</div>
+    <div class="d-state k"><b>not-available</b>Row names missing input.</div>
+    <div class="d-state"><b>success</b>Exported / refreshed.</div>
+  </div>
+</section>
+
+<!-- C8 DISCIPLINARY -->
+<section id="c8" class="d-sec">
+  <div class="d-h3"><span class="n">C8</span>Disciplinary action + fan-out</div>
+  <div class="d-meta"><span class="d-pill file">HCMOS Disciplinary Flow.html</span><span class="d-pill role">R05/R06/R07/R11 + line-mgr R02</span><span class="d-pill ac">DISC-01/02/03/04 · SOD-01/02 · UNI-06</span></div>
+  <div class="d-vp">
+    <div class="d-vp-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="t">HCMOS Disciplinary Flow.html · warning · drafted · R05</span><a class="open" href="HCMOS Disciplinary Flow.html" target="_blank" rel="noopener">open ↗</a></div>
+    <iframe class="d-frame" data-src="HCMOS Disciplinary Flow.html" data-screen="warning" data-state="drafted" data-role="R05" data-theme="light" data-surface="desktop"></iframe>
+  </div>
+  <div class="d-hint"><b>In the embed:</b> switch to Suspension, the <span class="d-tok">SoD block</span> screen, and the <span class="d-tok">self</span> state (acting on yourself is refused). EN + SW both drawn.</div>
+  <div class="d-rl">
+    <div class="d-panel"><h4><span class="ic"></span>Layout — action modal over directory</h4>
+      <ul class="d-list">
+        <li>Modal over the dimmed directory backdrop; subject header, action type (warning / suspension), reason, evidence.</li>
+        <li><b>Fan-out</b> panel: who gets notified (line manager, HR, payroll on suspension) rendered as a routing list.</li>
+        <li>SoD visibility: the checker (approver) is named and must differ from the issuer.</li>
+      </ul>
+    </div>
+    <div class="d-panel"><h4><span class="ic"></span>Rules</h4>
+      <ul class="d-list">
+        <li>Issuer ≠ subject (<span class="d-tok">self</span> is refused) and issuer ≠ checker (SOD-01/02).</li>
+        <li>Suspension fans out to payroll/attendance; every step is audited (UNI-06).</li>
+        <li>Manager-resolve path (DISC-02); suspended subject sees the blocked ESS state (links to E14).</li>
+        <li>Confidential to R05/R06/R07/R11 (A3).</li>
+      </ul>
+    </div>
+  </div>
+  <div class="d-states">
+    <div class="d-state"><b>empty</b>New action, nothing entered.</div>
+    <div class="d-state k"><b>drafted</b>Filled, pre-submit review.</div>
+    <div class="d-state"><b>loading</b>Submitting.</div>
+    <div class="d-state"><b>success</b>Issued + fanned out + audited.</div>
+    <div class="d-state"><b>error</b>Submit failed, nothing changed.</div>
+    <div class="d-state k"><b>no-permission</b>Role can't issue.</div>
+    <div class="d-state k"><b>self</b>Acting on yourself — refused.</div>
+    <div class="d-state"><b>offline</b>Queued for sync.</div>
+  </div>
+</section>
+
+<!-- C18 EXACT -->
+<section id="c18" class="d-sec">
+  <div class="d-h3"><span class="n">C18</span>Exact integration — schema · reconcile · control-totals · publish</div>
+  <div class="d-meta"><span class="d-pill file">HCMOS Exact &amp; Asset.html</span><span class="d-pill role">R07/R08/R09/R12</span><span class="d-pill ac">EXACT-01..10 · LVR-02 · PRT-02</span></div>
+  <div class="d-vp">
+    <div class="d-vp-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="t">HCMOS Exact &amp; Asset.html · exact · populated · R07</span><a class="open" href="HCMOS Exact &amp; Asset.html" target="_blank" rel="noopener">open ↗</a></div>
+    <iframe class="d-frame" data-src="HCMOS Exact &amp; Asset.html" data-screen="exact" data-state="populated" data-role="R07" data-theme="light" data-surface="desktop"></iframe>
+  </div>
+  <div class="d-hint"><b>In the embed:</b> the two safety-net states — <span class="d-tok">validation-failed</span> &amp; <span class="d-tok">totals-mismatch</span> — both hard-block publish. Also Asset (C22) &amp; Payslip (E6).</div>
+  <div class="d-rl">
+    <div class="d-panel"><h4><span class="ic"></span>Layout — pipeline</h4>
+      <ul class="d-list">
+        <li>Top <span class="d-tok">.pipe</span> stepper: Upload → Schema → Reconcile → Control-totals → Publish, node states done/active/fail/partial.</li>
+        <li>Dropzone (<span class="d-tok">.drop</span>) → match-key chip (<span class="d-tok">.mkey</span>) → reconciliation buckets (<span class="d-tok">.recon</span>) → control-totals table (<span class="d-tok">.ctot</span>) → publish summary (<span class="d-tok">.pub</span>).</li>
+        <li>Failures render as an offending-rows list (<span class="d-tok">.vlist</span>) or a red delta row (<span class="d-tok">.ctrow.bad</span>).</li>
+      </ul>
+    </div>
+    <div class="d-panel"><h4><span class="ic"></span>Rules — the safety net</h4>
+      <ul class="d-list">
+        <li><b>Nothing posts on a mismatch.</b> Schema-fail and any non-zero control-total delta both <b>hard-block publish</b>.</li>
+        <li>Match on the <b>legacy staff number</b> (<span class="d-tok">TMC-#####</span>), not the new TMCL number.</li>
+        <li>Unmatched held for review; a <b>leaver in the file is excluded</b>, never posted (LVR-02).</li>
+        <li>Partial publish: GL-posted / ESS-push-failed shown per leg; re-push only the failed leg — no GL double-post.</li>
+        <li>Wording: <b>Total Pay</b> / <b>Net Pay = Total Pay − Total Deduction</b>.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="d-states">
+    <div class="d-state"><b>empty</b>No file uploaded.</div>
+    <div class="d-state"><b>loading</b>Validating.</div>
+    <div class="d-state"><b>populated</b>Reconciliation report.</div>
+    <div class="d-state k"><b>large-data</b>5,000-row return, virtualised.</div>
+    <div class="d-state"><b>error / offline</b>Retry / queued.</div>
+    <div class="d-state k"><b>no-permission</b>Role outside set.</div>
+    <div class="d-state k"><b>validation-failed</b>Schema errors — publish blocked.</div>
+    <div class="d-state k"><b>totals-mismatch</b>Delta — publish blocked.</div>
+    <div class="d-state k"><b>partial-publish</b>GL ok / ESS failed — scoped re-push.</div>
+    <div class="d-state"><b>success</b>Posted + payslips published.</div>
+  </div>
+</section>
+
+<!-- C20b ALERTS -->
+<section id="c20b" class="d-sec">
+  <div class="d-h3"><span class="n">C20b</span>Expiry-alert configuration</div>
+  <div class="d-meta"><span class="d-pill file">HCMOS Governance &amp; ESS.html</span><span class="d-pill role">R05/R06/R07/R11/R12</span><span class="d-pill ac">DOC-01 · UNI-06</span></div>
+  <div class="d-vp">
+    <div class="d-vp-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="t">HCMOS Governance &amp; ESS.html · alerts · populated · R07</span><a class="open" href="HCMOS Governance &amp; ESS.html" target="_blank" rel="noopener">open ↗</a></div>
+    <iframe class="d-frame" data-src="HCMOS Governance &amp; ESS.html" data-screen="alerts" data-state="populated" data-role="R07" data-theme="light" data-surface="desktop"></iframe>
+  </div>
+  <div class="d-hint"><b>In the embed:</b> also Controls (C20), Support (E12) &amp; Policy (E7) live in this file.</div>
+  <div class="d-rl">
+    <div class="d-panel"><h4><span class="ic"></span>Layout</h4>
+      <ul class="d-list">
+        <li>Per doc-type row: lead-time chips (<b>90 / 60 / 30 / 7 days</b>) + notified-role selector.</li>
+        <li>Set / repeat / clear controls per alert; active vs cleared alert states are visually distinct.</li>
+        <li>Cards in a <span class="d-tok">.grid</span>; each doc type is a configurable tile.</li>
+      </ul>
+    </div>
+    <div class="d-panel"><h4><span class="ic"></span>Rules</h4>
+      <ul class="d-list">
+        <li><b>DA-1 lead times</b> 90/60/30/7; <b>DA-2</b> names the notified role.</li>
+        <li>Clearing an alert is audited (UNI-06).</li>
+        <li>Feeds document-expiry into the KPI/scorecard completion metrics.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="d-states">
+    <div class="d-state"><b>empty</b>No alerts configured.</div>
+    <div class="d-state"><b>loading</b>Skeleton config.</div>
+    <div class="d-state"><b>populated</b>Alerts set, lead times shown.</div>
+    <div class="d-state"><b>large-data</b>Many doc types.</div>
+    <div class="d-state"><b>error / offline</b>Retry / queued.</div>
+    <div class="d-state k"><b>no-permission</b>Role can't configure.</div>
+    <div class="d-state"><b>success</b>Saved / cleared (audited).</div>
+    <div class="d-state"><b>cleared</b>Alert cleared state.</div>
+  </div>
+</section>
+
+<!-- C20 CONTROLS -->
+<section id="c20" class="d-sec">
+  <div class="d-h3"><span class="n">C20</span>Controls &amp; checker</div>
+  <div class="d-meta"><span class="d-pill file">HCMOS Governance &amp; ESS.html</span><span class="d-pill role">R11/R12 · R07 refused</span><span class="d-pill ac">AUD-01/02/03 · SOD-02 · LVR-01</span></div>
+  <div class="d-vp">
+    <div class="d-vp-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="t">HCMOS Governance &amp; ESS.html · controls · populated · R11</span><a class="open" href="HCMOS Governance &amp; ESS.html" target="_blank" rel="noopener">open ↗</a></div>
+    <iframe class="d-frame" data-src="HCMOS Governance &amp; ESS.html" data-screen="controls" data-state="populated" data-role="R11" data-theme="light" data-surface="desktop"></iframe>
+  </div>
+  <div class="d-hint"><b>In the embed:</b> compare <span class="d-tok">populated</span> (fail-with-offenders) against <span class="d-tok">all-clear</span> (every control green with its checked-count).</div>
+  <div class="d-rl">
+    <div class="d-panel"><h4><span class="ic"></span>Layout</h4>
+      <ul class="d-list">
+        <li>Control cards: SoD breach · attendance-without-GPS · leaver-access · audit-chain integrity.</li>
+        <li><b>Fail</b> → an offending-records grid per control. <b>Pass</b> → an all-clear evidence grid: each control green <b>with its checked-count</b> (provable, not asserted).</li>
+        <li>The control run itself is audited.</li>
+      </ul>
+    </div>
+    <div class="d-panel"><h4><span class="ic"></span>Rules</h4>
+      <ul class="d-list">
+        <li><b>Gate = Compliance / IT (R11, R12).</b> Head of HR (R07) is <b>refused</b> — not general HR seniority.</li>
+        <li>All-clear must show counts (e.g. “412 attendance records checked, 0 without GPS”).</li>
+        <li>Run audited (UNI-06); leaver-access checked against LVR-01.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="d-states">
+    <div class="d-state"><b>empty</b>No run yet.</div>
+    <div class="d-state"><b>loading</b>Run in progress.</div>
+    <div class="d-state k"><b>populated</b>Fail — offending records grid.</div>
+    <div class="d-state k"><b>all-clear</b>Every control green + count.</div>
+    <div class="d-state"><b>large-data</b>Many offenders, virtualised.</div>
+    <div class="d-state"><b>error / offline</b>Retry / queued.</div>
+    <div class="d-state k"><b>no-permission</b>R07 refused — not HR seniority.</div>
+    <div class="d-state"><b>success</b>Run completed + audited.</div>
+  </div>
+</section>
+
+<!-- C21 TENANT -->
+<section id="c21" class="d-sec">
+  <div class="d-h3"><span class="n">C21</span>Tenant provisioning wizard</div>
+  <div class="d-meta"><span class="d-pill file">HCMOS Tenant Provisioning.html</span><span class="d-pill role">R07/R11/R12</span><span class="d-pill ac">TEN-01/02/03</span></div>
+  <div class="d-vp">
+    <div class="d-vp-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="t">HCMOS Tenant Provisioning.html · review · populated · R12</span><a class="open" href="HCMOS Tenant Provisioning.html" target="_blank" rel="noopener">open ↗</a></div>
+    <iframe class="d-frame" data-src="HCMOS Tenant Provisioning.html" data-screen="review" data-state="populated" data-role="R12" data-theme="light" data-surface="desktop"></iframe>
+  </div>
+  <div class="d-hint"><b>In the embed:</b> step through 1 Identity → 8 Review; contrast the atomic <span class="d-tok">success</span> (provisioned) against <span class="d-tok">error</span> (rollback, no half-tenant).</div>
+  <div class="d-rl">
+    <div class="d-panel"><h4><span class="ic"></span>Layout — 8-step wizard</h4>
+      <ul class="d-list">
+        <li>Step rail: Identity · Roles · Sites · Leave · Docs · KPI · Statutory · Review.</li>
+        <li>Each step is a card form; the Review step summarises seeded counts before commit.</li>
+        <li>Provisioned state names the new <span class="d-tok">company_id</span> + seeded counts + an RLS-isolation note.</li>
+      </ul>
+    </div>
+    <div class="d-panel"><h4><span class="ic"></span>Rules</h4>
+      <ul class="d-list">
+        <li>Wizard <b>seeds all config from registry</b> — roles R01–R13, matrix, sites/codes, leave &amp; doc types, KPI catalogue/targets, statutory params — <b>no manual DB step</b>.</li>
+        <li><b>Atomic provision</b>: success mints a fresh RLS-keyed <span class="d-tok">company_id</span>; error <b>rolls back</b> — never a half-provisioned tenant.</li>
+        <li>Repeatable; identity-collision rejection is a deferred secondary state.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="d-states">
+    <div class="d-state"><b>empty</b>Fresh wizard, step 1.</div>
+    <div class="d-state"><b>loading</b>Provisioning…</div>
+    <div class="d-state"><b>populated</b>Steps filled, review ready.</div>
+    <div class="d-state"><b>large-data</b>Many sites/roles seeded.</div>
+    <div class="d-state k"><b>error</b>Rollback — no half-tenant.</div>
+    <div class="d-state k"><b>no-permission</b>Role can't provision.</div>
+    <div class="d-state"><b>offline</b>Blocked (server op).</div>
+    <div class="d-state k"><b>success</b>company_id minted + counts + RLS note.</div>
+  </div>
+</section>
+
+<!-- ═══════════════ ESS MOBILE ═══════════════ -->
+<div class="d-sec" style="padding-bottom:0"><div class="d-eyebrow">Track B</div><h2 class="d-h2">ESS — mobile</h2><p class="d-lead">Employee self-service (R13), mirrored to R01–R12 managers via the mobile app (C23). Embeds default to the <b>mobile</b> surface — the phone sits centred on the canvas. Single column, 44px+ hit targets, offline-first with last-synced fallbacks. Confidential documents are <b>restricted-not-shown</b>.</p></div>
+
+<!-- E2 ESS SERVICES -->
+<section id="ess" class="d-sec">
+  <div class="d-h3"><span class="n">E2</span>ESS services — home · docs · notifications · ID · gate · blocked</div>
+  <div class="d-meta"><span class="d-pill file">HCMOS ESS Services.html</span><span class="d-pill role">R13 (+R01–R12)</span><span class="d-pill ac">UNI-01 · DOC · PRT-01 · A3 · LVR-01 · DISC-03</span></div>
+  <div class="d-vp">
+    <div class="d-vp-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="t">HCMOS ESS Services.html · home · populated · mobile · R13</span><a class="open" href="HCMOS ESS Services.html" target="_blank" rel="noopener">open ↗</a></div>
+    <iframe class="d-frame mob" data-src="HCMOS ESS Services.html" data-screen="home" data-state="populated" data-role="R13" data-theme="light" data-surface="mobile"></iframe>
+  </div>
+  <div class="d-hint"><b>In the embed:</b> switch screen — Home · Documents · Notifications · ID card · Profile gate · Blocked — and the Blocked screen's two distinct causes (suspended vs terminated).</div>
+  <div class="d-rl">
+    <div class="d-panel"><h4><span class="ic"></span>Layout — mobile shell</h4>
+      <ul class="d-list">
+        <li>Status-bar-safe <span class="d-tok">.topbar</span> (extra top pad on mobile) + online/offline chip; scrolling <span class="d-tok">.body</span>, bottom-safe padding.</li>
+        <li><b>Home</b>: greeting + clock chip + quick-action grid + activity feed + outstanding items.</li>
+        <li><b>Documents</b>: payslips / contract / certs / ID list; confidential rows carry a restriction note.</li>
+        <li><b>ID card</b>: permitted fields only; QR verify; offline-capable; flip for back.</li>
+      </ul>
+    </div>
+    <div class="d-panel"><h4><span class="ic"></span>Rules &amp; gates</h4>
+      <ul class="d-list">
+        <li><b>Profile gate (E13):</b> required-field checklist + progress blocks ESS until complete; success unlocks.</li>
+        <li><b>Blocked (E14):</b> suspended (DISC-03) vs terminated/closed (LVR-01) are <b>distinct</b> — ESS paused, contact HR.</li>
+        <li>Confidential documents are <b>restricted-not-shown</b> (A3); offline download queued.</li>
+        <li>Notifications sync ESS ↔ HCMOS (UNI-01); offline shows last-synced.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="d-states">
+    <div class="d-state"><b>empty</b>Nothing outstanding.</div>
+    <div class="d-state"><b>loading</b>Skeleton cards.</div>
+    <div class="d-state"><b>populated</b>Home / list filled.</div>
+    <div class="d-state"><b>large-data</b>Long doc / notif list.</div>
+    <div class="d-state"><b>error</b>Retry.</div>
+    <div class="d-state k"><b>no-permission</b>Profile gate / blocked.</div>
+    <div class="d-state k"><b>offline</b>Last-synced fallback.</div>
+    <div class="d-state"><b>success</b>Action confirmed.</div>
+  </div>
+</section>
+
+<!-- E3 ATTENDANCE -->
+<section id="e3" class="d-sec">
+  <div class="d-h3"><span class="n">E3</span>Attendance — clock in/out · geofence · offline</div>
+  <div class="d-meta"><span class="d-pill file">HCMOS Attendance Flow.html</span><span class="d-pill role">R13 (+R01–R12) · Kiosk assisted</span><span class="d-pill ac">ATT-01/02/03 · UNI-01/06</span></div>
+  <div class="d-vp">
+    <div class="d-vp-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="t">HCMOS Attendance Flow.html · clock in · mobile · R13</span><a class="open" href="HCMOS Attendance Flow.html" target="_blank" rel="noopener">open ↗</a></div>
+    <iframe class="d-frame mob" data-src="HCMOS Attendance Flow.html" data-screen="clockin" data-state="success" data-role="R13" data-theme="light" data-surface="mobile"></iframe>
+  </div>
+  <div class="d-hint"><b>In the embed:</b> Geofence radar, the <span class="d-tok">low-accuracy</span> hold, <span class="d-tok">offline</span> queue, and <span class="d-tok">conflict</span> resolution; try Kiosk surface for the assisted roster.</div>
+  <div class="d-rl">
+    <div class="d-panel"><h4><span class="ic"></span>Layout</h4>
+      <ul class="d-list">
+        <li>Shift context strip (<span class="d-tok">.shiftbar</span>) → geofence radar (<span class="d-tok">.geo</span>, pulsing you-dot inside/outside the boundary) → big <span class="d-tok">.punch</span> button → capture receipt.</li>
+        <li>Success = a <span class="d-tok">.seal</span> hero + receipt; result <b>seals</b> for ok / error / offline.</li>
+        <li>Kiosk: assisted roster (<span class="d-tok">.roster</span>) — 5,214 rows virtualised.</li>
+        <li>Offline: a sync queue (<span class="d-tok">.qitem</span> queued/syncing/synced/conflict).</li>
+      </ul>
+    </div>
+    <div class="d-panel"><h4><span class="ic"></span>Rules</h4>
+      <ul class="d-list">
+        <li><b>Three-way geofence outcome:</b> within (names the zone) / outside / <b>accuracy-too-low</b> (±140 m > ±100 m tolerance → hold + retry, <i>not</i> a rejection).</li>
+        <li>Server re-validates on sync; offline queue dedupes by idempotency key; conflicts resolve explicitly.</li>
+        <li>Punch, sync &amp; conflict are audited (UNI-06); geofence radius is <span class="tag" style="font-family:var(--d-mono);font-size:10px;background:rgba(251,192,45,.18);color:#9A6B00">SS-3 Open</span>.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="d-states">
+    <div class="d-state"><b>empty</b>No shift context.</div>
+    <div class="d-state"><b>loading</b>Locating…</div>
+    <div class="d-state"><b>success</b>Punch sealed + receipt.</div>
+    <div class="d-state"><b>error</b>Capture failed.</div>
+    <div class="d-state k"><b>low-accuracy</b>Hold + retry (not reject).</div>
+    <div class="d-state k"><b>no-permission</b>Device not registered.</div>
+    <div class="d-state k"><b>offline</b>Queued + dedupe.</div>
+    <div class="d-state k"><b>large-data</b>Kiosk roster 5,214 virtualised.</div>
+    <div class="d-state k"><b>conflict</b>Device vs server resolution.</div>
+  </div>
+</section>
+
+<!-- E4 APPLY LEAVE -->
+<section id="e4" class="d-sec">
+  <div class="d-h3"><span class="n">E4</span>Apply leave — balance · overlap · 14-day · sick</div>
+  <div class="d-meta"><span class="d-pill file">HCMOS Leave &amp; Liability Flow.html</span><span class="d-pill role">R13 (+R01–R12)</span><span class="d-pill ac">LV-01/02/05 · LR-1/2/4/5/7</span></div>
+  <div class="d-vp">
+    <div class="d-vp-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="t">HCMOS Leave &amp; Liability Flow.html · apply · mobile · R13</span><a class="open" href="HCMOS Leave &amp; Liability Flow.html" target="_blank" rel="noopener">open ↗</a></div>
+    <iframe class="d-frame mob" data-src="HCMOS Leave &amp; Liability Flow.html" data-screen="apply" data-state="populated" data-role="R13" data-theme="light" data-surface="mobile"></iframe>
+  </div>
+  <div class="d-hint"><b>In the embed:</b> the <span class="d-tok">sick-leave</span> path (separate tile, cert-required-on-submit) and the over-balance / overlap / &gt;14-day blocks with the HoH exception.</div>
+  <div class="d-rl">
+    <div class="d-panel"><h4><span class="ic"></span>Layout</h4>
+      <ul class="d-list">
+        <li>Balance tiles (<span class="d-tok">.tiles</span>): annual (hi) · sick · carry — big mono figures with a lapse note.</li>
+        <li>Leave-type segmented tiles (<span class="d-tok">.ltype</span>) fill with the type's colour when chosen.</li>
+        <li>Form (<span class="d-tok">.fg</span>) → submission checks (<span class="d-tok">.checks</span> / <span class="d-tok">.chk</span>) → HoH exception panel (<span class="d-tok">.hoh</span>) when a rule trips.</li>
+      </ul>
+    </div>
+    <div class="d-panel"><h4><span class="ic"></span>Rules — blocks at submit</h4>
+      <ul class="d-list">
+        <li>Blocks on over-balance / overlap / <b>&gt;14 continuous</b> (LR-5) — with a Head-of-HR exception path.</li>
+        <li><b>Sick</b> is a separate 63 + 63 tile with a <b>certificate required from day one</b> (LR-7).</li>
+        <li>Carry lapses after 1 year (LR-4); entitlement per rotation (LR-1).</li>
+        <li>Offline: the request is queued.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="d-states">
+    <div class="d-state"><b>empty</b>Fresh request.</div>
+    <div class="d-state"><b>loading</b>Submitting.</div>
+    <div class="d-state"><b>populated</b>Filled + checks passing.</div>
+    <div class="d-state"><b>large-data</b>Long leave history.</div>
+    <div class="d-state k"><b>error</b>Blocked — rule tripped + HoH path.</div>
+    <div class="d-state k"><b>no-permission</b>Gate not met.</div>
+    <div class="d-state k"><b>offline</b>Queued.</div>
+    <div class="d-state k"><b>sick-leave</b>Separate tile + cert from day one.</div>
+    <div class="d-state"><b>success</b>Submitted, routed to approver.</div>
+  </div>
+</section>
+
+<!-- E6 PAYSLIP -->
+<section id="e6" class="d-sec">
+  <div class="d-h3"><span class="n">E6</span>Payslip</div>
+  <div class="d-meta"><span class="d-pill file">HCMOS Exact &amp; Asset.html</span><span class="d-pill role">R13 · own only</span><span class="d-pill ac">PRT-02</span></div>
+  <div class="d-vp">
+    <div class="d-vp-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="t">HCMOS Exact &amp; Asset.html · payslip · mobile · R13</span><a class="open" href="HCMOS Exact &amp; Asset.html" target="_blank" rel="noopener">open ↗</a></div>
+    <iframe class="d-frame mob" data-src="HCMOS Exact &amp; Asset.html" data-screen="payslip" data-state="populated" data-role="R13" data-theme="light" data-surface="mobile"></iframe>
+  </div>
+  <div class="d-hint"><b>In the embed:</b> the <span class="d-tok">no-permission</span> state proves own-payslip-only — a payslip is never returned to anyone but its owner.</div>
+  <div class="d-rl">
+    <div class="d-panel"><h4><span class="ic"></span>Layout</h4>
+      <ul class="d-list">
+        <li>Payslip card (<span class="d-tok">.pay</span>): header (period · number · status) → earnings section → deductions section → <b>net-pay hero</b> (<span class="d-tok">.paynet</span>, green, big mono).</li>
+        <li>Each section totals to a <span class="d-tok">.paytot</span> row; a secure-in-app note closes the card.</li>
+      </ul>
+    </div>
+    <div class="d-panel"><h4><span class="ic"></span>Rules — wording is law</h4>
+      <ul class="d-list">
+        <li><b>Total Pay</b> and <b>Net Pay = Total Pay − Total Deduction</b>. <b>Never “Total Allowance”.</b></li>
+        <li><b>Own payslip only</b> — confidential to its owner; in-app only (printing is a breach).</li>
+        <li>Published back to ESS by the Exact publish step (C18).</li>
+      </ul>
+    </div>
+  </div>
+  <div class="d-states">
+    <div class="d-state"><b>empty</b>No payslip yet this period.</div>
+    <div class="d-state"><b>loading</b>Skeleton.</div>
+    <div class="d-state"><b>populated</b>Full payslip.</div>
+    <div class="d-state"><b>large-data</b>History of periods.</div>
+    <div class="d-state"><b>error</b>Retry.</div>
+    <div class="d-state k"><b>no-permission</b>Own-payslip-only enforced.</div>
+    <div class="d-state k"><b>offline</b>Last-synced payslip.</div>
+    <div class="d-state"><b>success</b>Newly published seal.</div>
+  </div>
+</section>
+
+<!-- E8 MY KPIS -->
+<section id="e8" class="d-sec">
+  <div class="d-h3"><span class="n">E8</span>My KPIs</div>
+  <div class="d-meta"><span class="d-pill file">HCMOS KPI Scorecard.html</span><span class="d-pill role">R13 (+R01–R12)</span><span class="d-pill ac">KPI-04 · LIAB-03</span></div>
+  <div class="d-vp">
+    <div class="d-vp-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="t">HCMOS KPI Scorecard.html · My KPIs · mobile · R13</span><a class="open" href="HCMOS KPI Scorecard.html" target="_blank" rel="noopener">open ↗</a></div>
+    <iframe class="d-frame mob" data-src="HCMOS KPI Scorecard.html" data-screen="ess" data-state="populated" data-role="R13" data-theme="light" data-surface="mobile"></iframe>
+  </div>
+  <div class="d-hint"><b>In the embed:</b> the personal role-scoped set, and the <span class="d-tok">not-available</span> card that names its missing input.</div>
+  <div class="d-rl">
+    <div class="d-panel"><h4><span class="ic"></span>Layout</h4>
+      <ul class="d-list">
+        <li>Personal headline (<span class="d-tok">.myhead</span>: avatar + name + number) over a single-column stack of RAG <span class="d-tok">.kcard</span>s.</li>
+        <li>Each card carries value · formula · target · RAG left-border, same vocabulary as the console C3.</li>
+      </ul>
+    </div>
+    <div class="d-panel"><h4><span class="ic"></span>Rules</h4>
+      <ul class="d-list">
+        <li>Personal, role-scoped set only (KPI-04); live from slices 2–6.</li>
+        <li><b>N/A names the input</b> (LIAB-03) — a card missing data says which source, never a blank.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="d-states">
+    <div class="d-state"><b>empty</b>No personal KPIs.</div>
+    <div class="d-state"><b>loading</b>Skeleton cards.</div>
+    <div class="d-state"><b>populated</b>Personal RAG set.</div>
+    <div class="d-state"><b>large-data</b>Full personal catalogue.</div>
+    <div class="d-state"><b>error / offline</b>Retry / last-synced.</div>
+    <div class="d-state k"><b>no-permission</b>Outside scope.</div>
+    <div class="d-state k"><b>not-available</b>Card names missing input.</div>
+    <div class="d-state"><b>success</b>Refreshed.</div>
+  </div>
+</section>
+
+<div class="d-divider-label" style="margin-top:40px"><span class="ln"></span><span>end of spec</span><span class="ln"></span></div>
+
+<!--SCREENS-->
+
+
+
+<div class="d-foot">
+  HCMOS™ visual build specification · reconciled to <span class="d-tok dim">styles.css</span> · reference embeds are the live approved prototypes.
+  <div style="margin-top:10px"><a href="#overview">↑ Back to top</a></div>
+</div>
+</main>
+</div>
+
+<script>
+/* Deep-link each reference embed to a screen/state/surface/role by clicking the
+   prototype's own switcher buttons after it loads. Same-origin, so contentDocument
+   is reachable; the switcher markup (#screens/#states/#surfaces/#themes/#roles) is
+   identical across every flow file. The switcher stays visible so reviewers can
+   inspect the remaining states in place. */
+function frameSetup(f){
+  try{
+    var d=f.contentDocument, o=f.dataset;
+    var clk=function(grp,v){ if(!v) return;
+      var b=d.querySelector('#'+grp+' button[data-v="'+v+'"]'); if(b) b.click(); };
+    clk('screens',o.screen);
+    clk('themes',o.theme||'light');
+    clk('surfaces',o.surface||'desktop');
+    clk('roles',o.role);
+    clk('states',o.state); /* last: render reflects all keys */
+  }catch(e){/* cross-origin or not-ready: embed still shows its default */}
+}
+/* Lazy-load reference embeds by viewport proximity. (loading="lazy" and
+   IntersectionObserver both misbehave inside this nested preview; getBoundingClientRect
+   is reliable.) Sets src from data-src when near viewport, then deep-links via frameSetup. */
+(function(){
+  var frames=[].slice.call(document.querySelectorAll('iframe[data-src]'));
+  function load(f){
+    if(f.src && f.src!=='about:blank') return;
+    f.addEventListener('load',function(){frameSetup(f);},{once:true});
+    f.src=f.getAttribute('data-src');
+  }
+  function check(){
+    var vh=window.innerHeight||800;
+    frames.forEach(function(f){
+      var r=f.getBoundingClientRect();
+      if(r.top < vh+700 && r.bottom > -700) load(f);
+    });
+  }
+  window.addEventListener('scroll',check,{passive:true});
+  window.addEventListener('resize',check);
+  check(); setTimeout(check,400); setTimeout(check,1200);
+})();
+/* scrollspy */
+(function(){
+  var links=[].slice.call(document.querySelectorAll('.d-nav a'));
+  var map={}; links.forEach(function(a){ map[a.getAttribute('href').slice(1)]=a; });
+  var secs=[].slice.call(document.querySelectorAll('section[id]'));
+  var io=new IntersectionObserver(function(ents){
+    ents.forEach(function(e){
+      if(e.isIntersecting){
+        links.forEach(function(a){a.classList.remove('on');});
+        var a=map[e.target.id]; if(a){a.classList.add('on');}
+      }
+    });
+  },{rootMargin:'-10% 0px -80% 0px',threshold:0});
+  secs.forEach(function(s){io.observe(s);});
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,404 @@
+<style>
+  :root {
+    --green:#1FA24A; --green-d:#178A3E; --blue:#0094D4; --yellow:#FBC02D; --red:#E5484D;
+    --bg:#EEF1F3; --surface:#FFFFFF; --surface-2:#F6F8F9; --text:#15191D; --muted:#5C6770;
+    --faint:#8A949C; --border:#E2E7EA; --border-2:#EDF0F2;
+    --font:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --mono:ui-monospace,"SFMono-Regular",Menlo,monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:#0C1115; --surface:#141B20; --surface-2:#1A2228; --text:#E7EDF1; --muted:#94A2AC;
+      --faint:#697680; --border:#26313A; --border-2:#1E272E;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg:#EEF1F3; --surface:#FFFFFF; --surface-2:#F6F8F9; --text:#15191D; --muted:#5C6770;
+    --faint:#8A949C; --border:#E2E7EA; --border-2:#EDF0F2;
+  }
+  :root[data-theme="dark"] {
+    --bg:#0C1115; --surface:#141B20; --surface-2:#1A2228; --text:#E7EDF1; --muted:#94A2AC;
+    --faint:#697680; --border:#26313A; --border-2:#1E272E;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:var(--font); line-height:1.45; }
+  .num { font-family:var(--mono); font-variant-numeric:tabular-nums; letter-spacing:-.02em; }
+  .wrap { max-width:1040px; margin:0 auto; padding:32px 20px 64px; }
+  .band { height:4px; border-radius:4px; background:linear-gradient(90deg,#1FA24A 0 34%,#FBC02D 34% 67%,#0094D4 67% 100%); }
+  .eyebrow { text-transform:uppercase; letter-spacing:.11em; font-size:11px; font-weight:700; color:var(--faint); }
+  h1 { font-size:26px; font-weight:750; letter-spacing:-.02em; margin:10px 0 4px; text-wrap:balance; }
+  .sub { color:var(--muted); font-size:14px; max-width:60ch; }
+  .tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; margin:26px 0; }
+  .tile { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px 18px; }
+  .tile .k { font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--faint); font-weight:600; }
+  .tile .v { font-size:30px; font-weight:750; margin-top:6px; }
+  .tile .v small { font-size:14px; color:var(--muted); font-weight:600; }
+  .tile.accent .v { color:var(--green-d); }
+  .big { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:26px; }
+  .big-top { display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
+  .big-top .v { font-size:34px; font-weight:800; }
+  .track { height:12px; border-radius:8px; background:var(--surface-2); border:1px solid var(--border-2); overflow:hidden; margin-top:12px; display:flex; }
+  .track .seg-done { background:var(--green); }
+  .track .seg-prog { background:var(--blue); }
+  .track-legend { display:flex; gap:16px; margin-top:10px; font-size:12px; color:var(--muted); flex-wrap:wrap; }
+  .swatch { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:6px; vertical-align:-1px; }
+  .domain { margin-bottom:22px; }
+  .domain-h { display:flex; align-items:center; gap:14px; margin:0 0 10px; }
+  .domain-h h2 { font-size:15px; font-weight:700; margin:0; white-space:nowrap; }
+  .domain-bar { flex:1; height:6px; border-radius:6px; background:var(--surface-2); border:1px solid var(--border-2); overflow:hidden; }
+  .domain-bar span { display:block; height:100%; background:var(--green); }
+  .domain-pct { font-size:12px; color:var(--muted); min-width:34px; text-align:right; }
+  .mods { display:flex; flex-direction:column; gap:8px; }
+  .mod { display:grid; grid-template-columns:1fr auto auto; align-items:center; gap:16px;
+         background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px 16px; }
+  .mod-name { font-weight:650; font-size:14px; }
+  .mod-note { color:var(--muted); font-size:12.5px; margin-top:2px; }
+  .mod-layers { display:flex; gap:5px; }
+  .dot { font-size:9.5px; font-weight:700; letter-spacing:.02em; color:var(--faint);
+         border:1px solid var(--border); border-radius:5px; padding:3px 6px; background:var(--surface-2); }
+  .dot.on { color:#fff; background:var(--green); border-color:var(--green); }
+  .pill { font-size:11px; font-weight:700; padding:4px 11px; border-radius:20px; white-space:nowrap; }
+  .pill-done { background:rgba(31,162,74,.14); color:var(--green-d); }
+  .pill-prog { background:rgba(0,148,212,.14); color:var(--blue); }
+  .pill-plan { background:var(--surface-2); color:var(--faint); border:1px solid var(--border); }
+  .seams { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px; margin:28px 0; }
+  .seams h2 { font-size:15px; margin:0 0 4px; }
+  .seams p { color:var(--muted); font-size:13px; margin:0 0 12px; }
+  .seams ul { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:8px; }
+  .seams li { display:grid; grid-template-columns:1fr auto; gap:6px 16px; padding:10px 0; border-top:1px solid var(--border-2); align-items:center; }
+  .seam-name { font-weight:650; font-size:13.5px; }
+  .seam-owner { color:var(--muted); font-size:12.5px; }
+  .seam-status { grid-column:2; color:var(--blue); font-size:12px; font-weight:600; text-align:right; }
+  footer { color:var(--faint); font-size:12px; margin-top:30px; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; border-top:1px solid var(--border-2); padding-top:14px; }
+  @media (max-width:640px) {
+    .mod { grid-template-columns:1fr; align-items:start; }
+    .seams li { grid-template-columns:1fr; }
+    .seam-status { grid-column:1; text-align:left; }
+  }
+</style>
+
+<div class="wrap">
+  <div class="band"></div>
+  <div class="eyebrow" style="margin-top:16px;">HCMOS · Build progress</div>
+  <h1>HCMOS — Taifa Human Capital Management Operating System</h1>
+  <p class="sub">Complete, certified, fully-integrated HR platform for taifamining.tz</p>
+
+  <div class="tiles">
+    <div class="tile accent"><div class="k">Modules done</div><div class="v num">15<small> / 24</small></div></div>
+    <div class="tile"><div class="k">In progress</div><div class="v num">2</div></div>
+    <div class="tile"><div class="k">Planned</div><div class="v num">7</div></div>
+    <div class="tile"><div class="k">Layer coverage</div><div class="v num">65<small>%</small></div></div>
+  </div>
+
+  <div class="big">
+    <div class="big-top">
+      <div>
+        <div class="eyebrow">Overall completion</div>
+        <div class="v num">67%</div>
+      </div>
+      <div class="sub" style="text-align:right;">Weighted by module status<br/>(done = 1, in progress = ½)</div>
+    </div>
+    <div class="track">
+      <div class="seg-done" style="width:63%"></div>
+      <div class="seg-prog" style="width:4%"></div>
+    </div>
+    <div class="track-legend">
+      <span><span class="swatch" style="background:var(--green)"></span>Done</span>
+      <span><span class="swatch" style="background:var(--blue)"></span>In progress (½)</span>
+      <span><span class="swatch" style="background:var(--surface-2);border:1px solid var(--border)"></span>Planned</span>
+      <span style="margin-left:auto;">Each module shows its <strong>DB · API · Web · Tests</strong> coverage</span>
+    </div>
+  </div>
+
+  
+  <section class="domain">
+    <header class="domain-h">
+      <h2>Foundation &amp; Security</h2>
+      <div class="domain-bar"><span style="width:100%"></span></div>
+      <span class="domain-pct num">100%</span>
+    </header>
+    <div class="mods">
+    <div class="mod">
+      <div class="mod-main">
+        <div class="mod-name">Per-tenant row-level security</div>
+        <div class="mod-note">Postgres RLS on every tenant table; proven 0/N isolation</div>
+      </div>
+      <div class="mod-layers"><span class="dot on" title="DB: implemented">DB</span><span class="dot on" title="API: implemented">API</span><span class="dot " title="Web: pending">Web</span><span class="dot on" title="Tests: implemented">Tests</span></div>
+      <div class="mod-status"><span class="pill pill-done">Done</span></div>
+    </div>
+    <div class="mod">
+      <div class="mod-main">
+        <div class="mod-name">Authentication &amp; MFA</div>
+        <div class="mod-note">JWT + TOTP, lockout, enforced MFA for privileged roles</div>
+      </div>
+      <div class="mod-layers"><span class="dot on" title="DB: implemented">DB</span><span class="dot on" title="API: implemented">API</span><span class="dot on" title="Web: implemented">Web</span><span class="dot on" title="Tests: implemented">Tests</span></div>
+      <div class="mod-status"><span class="pill pill-done">Done</span></div>
+    </div>
+    <div class="mod">
+      <div class="mod-main">
+        <div class="mod-name">Tamper-evident audit ledger</div>
+        <div class="mod-note">Hash-chained, append-only, tamper-detected</div>
+      </div>
+      <div class="mod-layers"><span class="dot on" title="DB: implemented">DB</span><span class="dot on" title="API: implemented">API</span><span class="dot on" title="Web: implemented">Web</span><span class="dot on" title="Tests: implemented">Tests</span></div>
+      <div class="mod-status"><span class="pill pill-done">Done</span></div>
+    </div></div>
+  </section>
+  <section class="domain">
+    <header class="domain-h">
+      <h2>Core HR</h2>
+      <div class="domain-bar"><span style="width:67%"></span></div>
+      <span class="domain-pct num">67%</span>
+    </header>
+    <div class="mods">
+    <div class="mod">
+      <div class="mod-main">
+        <div class="mod-name">Employee master &amp; lifecycle</div>
+        <div class="mod-note">Confidential fields absent-not-masked; TMCL numbering</div>
+      </div>
+      <div class="mod-layers"><span class="dot on" title="DB: implemented">DB</span><span class="dot on" title="API: implemented">API</span><span class="dot on" title="Web: implemented">Web</span><span class="dot on" title="Tests: implemented">Tests</span></div>
+      <div class="mod-status"><span class="pill pill-done">Done</span></div>
+    </div>
+    <div class="mod">
+      <div class="mod-main">
+        <div class="mod-name">Payroll run &amp; approval</div>
+        <div class="mod-note">Statutory engine; SoD maker≠checker at app + DB</div>
+      </div>
+      <div class="mod-layers"><span class="dot on" title="DB: implemented">DB</span><span class="dot on" title="API: implemented">API</span><span class="dot on" title="Web: implemented">Web</span><span class="dot on" title="Tests: implemented">Tests</span></div>
+      <div class="mod-status"><span class="pill pill-done">Done</span></div>
+    </div>
+    <div class="mod">
+      <div class="mod-main">
+        <div class="mod-name">Leave &amp; liability</div>
+        <div class="mod-note">Request→approve, ELRA entitlements, monetised liability</div>
+      </div>
+      <div class="mod-layers"><span class="dot on" title="DB: implemented">DB</span><span class="dot on" title="API: implemented">API</span><span class="dot on" title="Web: implemented">Web</span><span class="dot on" title="Tests: implemented">Tests</span></div>
+      <div class="mod-status"><span class="pill pill-done">Done</span></div>
+    </div>
+    <div class="mod">
+      <div class="mod-main">
+        <div class="mod-name">Organization &amp; departments</div>
+        <div class="mod-note">Department CRUD, tree, department heads, headcount</div>
+      </div>
+      <div class="mod-layers"><span class="dot on" title="DB: implemented">DB</span><span class="dot on" title="API: implemented">API</span><span class="dot on" title="Web: implemented">Web</span><span class="dot on" title="Tests: implemented">Tests</span></div>
+      <div class="mod-status"><span class="pill pill-done">Done</span></div>
+    </div>
+    <div class="mod">
+      <div class="mod-main">
+        <div class="mod-name">Disciplinary &amp; grievances</div>
+        <div class="mod-note">Cases, hearings, outcomes with confidentiality</div>
+      </div>
+      <div class="mod-layers"><span class="dot " title="DB: pending">DB</span><span class="dot " title="API: pending">API</span><span class="dot " title="Web: pending">Web</span><span class="dot " title="Tests: pending">Tests</span></div>
+      <div class="mod-status"><span class="pill pill-plan">Planned</span></div>
+    </div>
+    <div class="mod">
+      <div class="mod-main">
+        <div class="mod-name">Recruitment &amp; onboarding</div>
+        <div class="mod-note">Requisitions, candidates, OSHA medical stage</div>
+      </div>
+      <div class="mod-layers"><span class="dot " title="DB: pending">DB</span><span class="dot " title="API: pending">API</span><span class="dot " title="Web: pending">Web</span><span class="dot " title="Tests: pending">Tests</span></div>
+      <div class="mod-status"><span class="pill pill-plan">Planned</span></div>
+    </div></div>
+  </section>
+  <section class="domain">
+    <header class="domain-h">
+      <h2>Time &amp; Attendance</h2>
+      <div class="domain-bar"><span style="width:75%"></span></div>
+      <span class="domain-pct num">75%</span>
+    </header>
+    <div class="mods">
+    <div class="mod">
+      <div class="mod-main">
+        <div class="mod-name">Attendance (clock &amp; roster)</div>
+        <div class="mod-note">Clock in/out, worked minutes, ESS self-scoping</div>
+      </div>
+      <div class="mod-layers"><span class="dot on" title="DB: implemented">DB</span><span class="dot on" title="API: implemented">API</span><span class="dot on" title="Web: implemented">Web</span><span class="dot on" title="Tests: implemented">Tests</span></div>
+      <div class="mod-status"><span class="pill pill-done">Done</span></div>
+    </div>
+    <div class="mod">
+      <div class="mod-main">
+        <div class="mod-name">Overtime &amp; timesheets</div>
+        <div class="mod-note">ELRA overtime calc live; timesheet capture pending</div>
+      </div>
+      <div class="mod-layers"><span class="dot " title="DB: pending">DB</span><span class="dot on" title="API: implemented">API</span><span class="dot " title="Web: pending">Web</span><span class="dot on" title="Tests: implemented">Tests</span></div>
+      <div class="mod-status"><span class="pill pill-prog">In progress</span></div>
+    </div></div>
+  </section>
+  <section class="domain">
+    <header class="domain-h">
+      <h2>Performance &amp; Development</h2>
+      <div class="domain-bar"><span style="width:100%"></span></div>
+      <span class="domain-pct num">100%</span>
+    </header>
+    <div class="mods">
+    <div class="mod">
+      <div class="mod-main">
+        <div class="mod-name">Performance appraisals</div>
+        <div class="mod-note">Draft→submit→acknowledge, ratings, ESS acknowledgement</div>
+      </div>
+      <div class="mod-layers"><span class="dot on" title="DB: implemented">DB</span><span class="dot on" title="API: implemented">API</span><span class="dot on" title="Web: implemented">Web</span><span class="dot on" title="Tests: implemented">Tests</span></div>
+      <div class="mod-status"><span class="pill pill-done">Done</span></div>
+    </div>
+    <div class="mod">
+      <div class="mod-main">
+        <div class="mod-name">Training &amp; competency</div>
+        <div class="mod-note">Courses, completion, expiry &amp; compliance %</div>
+      </div>
+      <div class="mod-layers"><span class="dot on" title="DB: implemented">DB</span><span class="dot on" title="API: implemented">API</span><span class="dot on" title="Web: implemented">Web</span><span class="dot on" title="Tests: implemented">Tests</span></div>
+      <div class="mod-status"><span class="pill pill-done">Done</span></div>
+    </div>
+    <div class="mod">
+      <div class="mod-main">
+        <div class="mod-name">KPI scorecard</div>
+        <div class="mod-note">Live cross-module KPIs with RAG vs targets</div>
+      </div>
+      <div class="mod-layers"><span class="dot " title="DB: pending">DB</span><span class="dot on" title="API: implemented">API</span><span class="dot on" title="Web: implemented">Web</span><span class="dot on" title="Tests: implemented">Tests</span></div>
+      <div class="mod-status"><span class="pill pill-done">Done</span></div>
+    </div></div>
+  </section>
+  <section class="domain">
+    <header class="domain-h">
+      <h2>Compliance &amp; Safety (HSEQ)</h2>
+      <div class="domain-bar"><span style="width:100%"></span></div>
+      <span class="domain-pct num">100%</span>
+    </header>
+    <div class="mods">
+    <div class="mod">
+      <div class="mod-main">
+        <div class="mod-name">HSEQ incidents, PPE &amp; medicals</div>
+        <div class="mod-note">Incident lifecycle, PPE &amp; medical tracking, safety KPIs</div>
+      </div>
+      <div class="mod-layers"><span class="dot on" title="DB: implemented">DB</span><span class="dot on" title="API: implemented">API</span><span class="dot on" title="Web: implemented">Web</span><span class="dot on" title="Tests: implemented">Tests</span></div>
+      <div class="mod-status"><span class="pill pill-done">Done</span></div>
+    </div></div>
+  </section>
+  <section class="domain">
+    <header class="domain-h">
+      <h2>Statutory Engines</h2>
+      <div class="domain-bar"><span style="width:100%"></span></div>
+      <span class="domain-pct num">100%</span>
+    </header>
+    <div class="mods">
+    <div class="mod">
+      <div class="mod-main">
+        <div class="mod-name">Statutory engine (PAYE/NSSF/SDL/WCF)</div>
+        <div class="mod-note">Versioned, table-driven; awaits advisor sign-off</div>
+      </div>
+      <div class="mod-layers"><span class="dot " title="DB: pending">DB</span><span class="dot on" title="API: implemented">API</span><span class="dot on" title="Web: implemented">Web</span><span class="dot on" title="Tests: implemented">Tests</span></div>
+      <div class="mod-status"><span class="pill pill-done">Done</span></div>
+    </div>
+    <div class="mod">
+      <div class="mod-main">
+        <div class="mod-name">Labour-law engine (ELRA 2004)</div>
+        <div class="mod-note">Overtime, leave, severance, notice</div>
+      </div>
+      <div class="mod-layers"><span class="dot " title="DB: pending">DB</span><span class="dot on" title="API: implemented">API</span><span class="dot on" title="Web: implemented">Web</span><span class="dot on" title="Tests: implemented">Tests</span></div>
+      <div class="mod-status"><span class="pill pill-done">Done</span></div>
+    </div></div>
+  </section>
+  <section class="domain">
+    <header class="domain-h">
+      <h2>Self-Service (ESS)</h2>
+      <div class="domain-bar"><span style="width:25%"></span></div>
+      <span class="domain-pct num">25%</span>
+    </header>
+    <div class="mods">
+    <div class="mod">
+      <div class="mod-main">
+        <div class="mod-name">ESS: my leave &amp; attendance</div>
+        <div class="mod-note">Self-scoping live; dedicated mobile ESS shell pending</div>
+      </div>
+      <div class="mod-layers"><span class="dot on" title="DB: implemented">DB</span><span class="dot on" title="API: implemented">API</span><span class="dot " title="Web: pending">Web</span><span class="dot on" title="Tests: implemented">Tests</span></div>
+      <div class="mod-status"><span class="pill pill-prog">In progress</span></div>
+    </div>
+    <div class="mod">
+      <div class="mod-main">
+        <div class="mod-name">ESS: my payslips &amp; profile</div>
+        <div class="mod-note">Payslip download, profile self-update with approval</div>
+      </div>
+      <div class="mod-layers"><span class="dot " title="DB: pending">DB</span><span class="dot " title="API: pending">API</span><span class="dot " title="Web: pending">Web</span><span class="dot " title="Tests: pending">Tests</span></div>
+      <div class="mod-status"><span class="pill pill-plan">Planned</span></div>
+    </div></div>
+  </section>
+  <section class="domain">
+    <header class="domain-h">
+      <h2>Platform Admin</h2>
+      <div class="domain-bar"><span style="width:0%"></span></div>
+      <span class="domain-pct num">0%</span>
+    </header>
+    <div class="mods">
+    <div class="mod">
+      <div class="mod-main">
+        <div class="mod-name">Users &amp; roles admin</div>
+        <div class="mod-note">User CRUD, role assignment, disable/enable</div>
+      </div>
+      <div class="mod-layers"><span class="dot on" title="DB: implemented">DB</span><span class="dot " title="API: pending">API</span><span class="dot " title="Web: pending">Web</span><span class="dot " title="Tests: pending">Tests</span></div>
+      <div class="mod-status"><span class="pill pill-plan">Planned</span></div>
+    </div>
+    <div class="mod">
+      <div class="mod-main">
+        <div class="mod-name">Tenant provisioning</div>
+        <div class="mod-note">Onboard a new mining company as a tenant</div>
+      </div>
+      <div class="mod-layers"><span class="dot on" title="DB: implemented">DB</span><span class="dot " title="API: pending">API</span><span class="dot " title="Web: pending">Web</span><span class="dot " title="Tests: pending">Tests</span></div>
+      <div class="mod-status"><span class="pill pill-plan">Planned</span></div>
+    </div>
+    <div class="mod">
+      <div class="mod-main">
+        <div class="mod-name">Bulk employee import</div>
+        <div class="mod-note">CSV/Excel import with validation &amp; preview</div>
+      </div>
+      <div class="mod-layers"><span class="dot " title="DB: pending">DB</span><span class="dot " title="API: pending">API</span><span class="dot " title="Web: pending">Web</span><span class="dot " title="Tests: pending">Tests</span></div>
+      <div class="mod-status"><span class="pill pill-plan">Planned</span></div>
+    </div></div>
+  </section>
+  <section class="domain">
+    <header class="domain-h">
+      <h2>Integrations &amp; Reporting</h2>
+      <div class="domain-bar"><span style="width:50%"></span></div>
+      <span class="domain-pct num">50%</span>
+    </header>
+    <div class="mods">
+    <div class="mod">
+      <div class="mod-main">
+        <div class="mod-name">Exact Online (GL export)</div>
+        <div class="mod-note">OAuth loop complete; awaits live credentials</div>
+      </div>
+      <div class="mod-layers"><span class="dot on" title="DB: implemented">DB</span><span class="dot on" title="API: implemented">API</span><span class="dot " title="Web: pending">Web</span><span class="dot on" title="Tests: implemented">Tests</span></div>
+      <div class="mod-status"><span class="pill pill-done">Done</span></div>
+    </div>
+    <div class="mod">
+      <div class="mod-main">
+        <div class="mod-name">Reports &amp; statutory filings</div>
+        <div class="mod-note">TRA/NSSF returns, payroll registers, exports</div>
+      </div>
+      <div class="mod-layers"><span class="dot " title="DB: pending">DB</span><span class="dot " title="API: pending">API</span><span class="dot " title="Web: pending">Web</span><span class="dot " title="Tests: pending">Tests</span></div>
+      <div class="mod-status"><span class="pill pill-plan">Planned</span></div>
+    </div></div>
+  </section>
+
+  <div class="seams">
+    <h2>External seams — cannot be produced by code alone</h2>
+    <p>These require an action or sign-off outside the repository. Each is built to drop in the moment it arrives.</p>
+    <ul>
+    <li>
+      <span class="seam-name">Live Exact OAuth credentials</span>
+      <span class="seam-owner">Client (Exact developer portal)</span>
+      <span class="seam-status">code-ready</span>
+    </li>
+    <li>
+      <span class="seam-name">Certified statutory/labour rates</span>
+      <span class="seam-owner">Licensed TZ tax &amp; labour advisor</span>
+      <span class="seam-status">encoded, awaiting sign-off</span>
+    </li>
+    <li>
+      <span class="seam-name">Penetration test</span>
+      <span class="seam-owner">External security firm</span>
+      <span class="seam-status">automated review passed; pentest pending</span>
+    </li></ul>
+  </div>
+
+  <footer>
+    <span>Generated from <span class="num">docs/build-status.json</span> · commit <span class="num">4899835</span></span>
+    <span class="num">2026-07-16T14:40:41Z</span>
+  </footer>
+</div>

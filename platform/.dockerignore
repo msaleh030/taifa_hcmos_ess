@@ -1,0 +1,13 @@
+**/node_modules
+**/dist
+**/build
+**/.turbo
+**/coverage
+**/*.tsbuildinfo
+**/.env
+**/.env.*
+!**/.env.example
+.git
+packages/db/generated
+apps/web/playwright-report
+apps/web/test-results

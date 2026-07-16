@@ -1,0 +1,81 @@
+{
+  "product": "HCMOS — Taifa Human Capital Management Operating System",
+  "goal": "Complete, certified, fully-integrated HR platform for taifamining.tz",
+  "legend": { "layers": ["db", "api", "web", "tests"] },
+  "externalSeams": [
+    { "name": "Live Exact OAuth credentials", "owner": "Client (Exact developer portal)", "status": "code-ready" },
+    { "name": "Certified statutory/labour rates", "owner": "Licensed TZ tax & labour advisor", "status": "encoded, awaiting sign-off" },
+    { "name": "Penetration test", "owner": "External security firm", "status": "automated review passed; pentest pending" }
+  ],
+  "domains": [
+    {
+      "name": "Foundation & Security",
+      "modules": [
+        { "key": "rls", "name": "Per-tenant row-level security", "status": "done", "db": true, "api": true, "web": false, "tests": true, "note": "Postgres RLS on every tenant table; proven 0/N isolation" },
+        { "key": "auth", "name": "Authentication & MFA", "status": "done", "db": true, "api": true, "web": true, "tests": true, "note": "JWT + TOTP, lockout, enforced MFA for privileged roles" },
+        { "key": "audit", "name": "Tamper-evident audit ledger", "status": "done", "db": true, "api": true, "web": true, "tests": true, "note": "Hash-chained, append-only, tamper-detected" }
+      ]
+    },
+    {
+      "name": "Core HR",
+      "modules": [
+        { "key": "employees", "name": "Employee master & lifecycle", "status": "done", "db": true, "api": true, "web": true, "tests": true, "note": "Confidential fields absent-not-masked; TMCL numbering" },
+        { "key": "payroll", "name": "Payroll run & approval", "status": "done", "db": true, "api": true, "web": true, "tests": true, "note": "Statutory engine; SoD maker≠checker at app + DB" },
+        { "key": "leave", "name": "Leave & liability", "status": "done", "db": true, "api": true, "web": true, "tests": true, "note": "Request→approve, ELRA entitlements, monetised liability" },
+        { "key": "org", "name": "Organization & departments", "status": "done", "db": true, "api": true, "web": true, "tests": true, "note": "Department CRUD, tree, department heads, headcount" },
+        { "key": "disciplinary", "name": "Disciplinary & grievances", "status": "planned", "db": false, "api": false, "web": false, "tests": false, "note": "Cases, hearings, outcomes with confidentiality" },
+        { "key": "recruitment", "name": "Recruitment & onboarding", "status": "planned", "db": false, "api": false, "web": false, "tests": false, "note": "Requisitions, candidates, OSHA medical stage" }
+      ]
+    },
+    {
+      "name": "Time & Attendance",
+      "modules": [
+        { "key": "attendance", "name": "Attendance (clock & roster)", "status": "done", "db": true, "api": true, "web": true, "tests": true, "note": "Clock in/out, worked minutes, ESS self-scoping" },
+        { "key": "timesheets", "name": "Overtime & timesheets", "status": "in_progress", "db": false, "api": true, "web": false, "tests": true, "note": "ELRA overtime calc live; timesheet capture pending" }
+      ]
+    },
+    {
+      "name": "Performance & Development",
+      "modules": [
+        { "key": "performance", "name": "Performance appraisals", "status": "done", "db": true, "api": true, "web": true, "tests": true, "note": "Draft→submit→acknowledge, ratings, ESS acknowledgement" },
+        { "key": "training", "name": "Training & competency", "status": "done", "db": true, "api": true, "web": true, "tests": true, "note": "Courses, completion, expiry & compliance %" },
+        { "key": "kpi", "name": "KPI scorecard", "status": "done", "db": false, "api": true, "web": true, "tests": true, "note": "Live cross-module KPIs with RAG vs targets" }
+      ]
+    },
+    {
+      "name": "Compliance & Safety (HSEQ)",
+      "modules": [
+        { "key": "hseq", "name": "HSEQ incidents, PPE & medicals", "status": "done", "db": true, "api": true, "web": true, "tests": true, "note": "Incident lifecycle, PPE & medical tracking, safety KPIs" }
+      ]
+    },
+    {
+      "name": "Statutory Engines",
+      "modules": [
+        { "key": "statutory", "name": "Statutory engine (PAYE/NSSF/SDL/WCF)", "status": "done", "db": false, "api": true, "web": true, "tests": true, "note": "Versioned, table-driven; awaits advisor sign-off" },
+        { "key": "labour", "name": "Labour-law engine (ELRA 2004)", "status": "done", "db": false, "api": true, "web": true, "tests": true, "note": "Overtime, leave, severance, notice" }
+      ]
+    },
+    {
+      "name": "Self-Service (ESS)",
+      "modules": [
+        { "key": "ess-time", "name": "ESS: my leave & attendance", "status": "in_progress", "db": true, "api": true, "web": false, "tests": true, "note": "Self-scoping live; dedicated mobile ESS shell pending" },
+        { "key": "ess-pay", "name": "ESS: my payslips & profile", "status": "planned", "db": false, "api": false, "web": false, "tests": false, "note": "Payslip download, profile self-update with approval" }
+      ]
+    },
+    {
+      "name": "Platform Admin",
+      "modules": [
+        { "key": "admin-users", "name": "Users & roles admin", "status": "planned", "db": true, "api": false, "web": false, "tests": false, "note": "User CRUD, role assignment, disable/enable" },
+        { "key": "tenant", "name": "Tenant provisioning", "status": "planned", "db": true, "api": false, "web": false, "tests": false, "note": "Onboard a new mining company as a tenant" },
+        { "key": "import", "name": "Bulk employee import", "status": "planned", "db": false, "api": false, "web": false, "tests": false, "note": "CSV/Excel import with validation & preview" }
+      ]
+    },
+    {
+      "name": "Integrations & Reporting",
+      "modules": [
+        { "key": "exact", "name": "Exact Online (GL export)", "status": "done", "db": true, "api": true, "web": false, "tests": true, "note": "OAuth loop complete; awaits live credentials" },
+        { "key": "reports", "name": "Reports & statutory filings", "status": "planned", "db": false, "api": false, "web": false, "tests": false, "note": "TRA/NSSF returns, payroll registers, exports" }
+      ]
+    }
+  ]
+}

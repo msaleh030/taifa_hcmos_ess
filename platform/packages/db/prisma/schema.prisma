@@ -1,0 +1,385 @@
+// HCMOS data model. Source of truth for the Prisma client and TypeScript types.
+// The DB itself is created by the SQL migrations under prisma/migrations, which
+// additionally enable per-tenant row-level security and the audit-chain trigger
+// (Prisma does not model RLS). Keep this schema and the SQL in agreement.
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  // Runtime connection — the non-owner `hcmos_app` role, which RLS is enforced against.
+  url = env("DATABASE_URL")
+  // Migrations/introspection connect as the owner/admin, which bypasses RLS to run DDL and seed.
+  directUrl = env("DIRECT_DATABASE_URL")
+}
+
+model Tenant {
+  id        String   @id @default(uuid()) @db.Uuid
+  slug      String   @unique
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  users         User[]
+  employees     Employee[]
+  departments   Department[]
+  payrollRuns   PayrollRun[]
+  auditEvents   AuditEvent[]
+  exactConn     ExactConnection?
+  leaveRequests LeaveRequest[]
+  leaveBalances LeaveBalance[]
+  attendance    AttendanceRecord[]
+  reviews       PerformanceReview[]
+  incidents     HseqIncident[]
+  ppeIssues     PpeIssue[]
+  medicals      MedicalRecord[]
+  training      TrainingRecord[]
+
+  @@map("tenant")
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  email        String
+  passwordHash String   @map("password_hash")
+  displayName  String   @map("display_name")
+  mfaSecret      String?   @map("mfa_secret")
+  mfaEnabled     Boolean   @default(false) @map("mfa_enabled")
+  disabled       Boolean   @default(false)
+  failedAttempts Int       @default(0) @map("failed_attempts")
+  lockedUntil    DateTime? @map("locked_until")
+  employeeId     String?   @map("employee_id") @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employee      Employee?      @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  roles         UserRole[]
+  refreshTokens RefreshToken[]
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+  @@map("app_user")
+}
+
+model UserRole {
+  userId   String @map("user_id") @db.Uuid
+  tenantId String @map("tenant_id") @db.Uuid
+  roleCode String @map("role_code")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleCode])
+  @@index([tenantId])
+  @@map("user_role")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tenantId  String    @map("tenant_id") @db.Uuid
+  tokenHash String    @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tenantId])
+  @@map("refresh_token")
+}
+
+model Department {
+  id        String  @id @default(uuid()) @db.Uuid
+  tenantId  String  @map("tenant_id") @db.Uuid
+  name      String
+  code      String?
+  parentId  String? @map("parent_id") @db.Uuid
+  managerId String? @map("manager_id") @db.Uuid
+
+  tenant    Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  parent    Department?  @relation("DeptTree", fields: [parentId], references: [id])
+  children  Department[] @relation("DeptTree")
+  manager   Employee?    @relation("DeptManager", fields: [managerId], references: [id], onDelete: SetNull)
+  employees Employee[]
+
+  @@index([tenantId])
+  @@map("department")
+}
+
+model Employee {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  employeeNo   String   @map("employee_no")
+  firstName    String   @map("first_name")
+  lastName     String   @map("last_name")
+  jobTitle     String   @map("job_title")
+  locationCode String   @map("location_code")
+  departmentId String?  @map("department_id") @db.Uuid
+  contractType String   @map("contract_type")
+  status       String   @default("active")
+  startDate    DateTime @map("start_date") @db.Date
+
+  // Confidential columns — surfaced only to holders of employee:read:confidential.
+  basicSalary  Int?    @map("basic_salary")
+  bankAccount  String? @map("bank_account")
+  nationalId   String? @map("national_id")
+  medicalNotes String? @map("medical_notes")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant        Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  department    Department?        @relation(fields: [departmentId], references: [id])
+  payslips      Payslip[]
+  users         User[]
+  leaveRequests LeaveRequest[]
+  leaveBalances LeaveBalance[]
+  attendance    AttendanceRecord[]
+  reviews       PerformanceReview[]
+  incidents     HseqIncident[]
+  ppeIssues     PpeIssue[]
+  medicals      MedicalRecord[]
+  training      TrainingRecord[]
+  managedDepts  Department[]        @relation("DeptManager")
+
+  @@unique([tenantId, employeeNo])
+  @@index([tenantId])
+  @@index([tenantId, departmentId])
+  @@map("employee")
+}
+
+model PayrollRun {
+  id         String    @id @default(uuid()) @db.Uuid
+  tenantId   String    @map("tenant_id") @db.Uuid
+  period     String // YYYY-MM
+  status     String    @default("draft") // draft | run | approved | cancelled
+  tableId    String    @map("table_id")
+  createdBy  String    @map("created_by") @db.Uuid
+  approvedBy String?   @map("approved_by") @db.Uuid
+  grossTotal BigInt    @default(0) @map("gross_total")
+  netTotal   BigInt    @default(0) @map("net_total")
+  statTotal  BigInt    @default(0) @map("stat_total")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  approvedAt DateTime? @map("approved_at")
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  payslips Payslip[]
+
+  @@unique([tenantId, period])
+  @@index([tenantId])
+  @@map("payroll_run")
+}
+
+model Payslip {
+  id             String @id @default(uuid()) @db.Uuid
+  tenantId       String @map("tenant_id") @db.Uuid
+  runId          String @map("run_id") @db.Uuid
+  employeeId     String @map("employee_id") @db.Uuid
+  gross          Int
+  nssfEmployee   Int    @map("nssf_employee")
+  paye           Int
+  netPay         Int    @map("net_pay")
+  employerTotal  Int    @map("employer_total")
+  statutoryTotal Int    @map("statutory_total")
+
+  run      PayrollRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  employee Employee   @relation(fields: [employeeId], references: [id])
+
+  @@index([tenantId])
+  @@index([runId])
+  @@map("payslip")
+}
+
+// Append-only, hash-chained audit log. Ordering and hashing are enforced by a
+// BEFORE INSERT trigger (see migration) so the chain cannot be forged from the
+// application layer. UPDATE/DELETE are revoked from the app role.
+model AuditEvent {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  // seq / prevHash / hash are assigned by the BEFORE INSERT trigger; these
+  // app-side defaults exist only so Prisma does not require them on create.
+  seq         BigInt   @default(0)
+  actorUserId String?  @map("actor_user_id") @db.Uuid
+  action      String
+  entity      String
+  entityId    String?  @map("entity_id")
+  data        Json?
+  prevHash    String   @default("") @map("prev_hash")
+  hash        String   @default("")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, seq])
+  @@index([tenantId])
+  @@map("audit_event")
+}
+
+model LeaveRequest {
+  id          String    @id @default(uuid()) @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  employeeId  String    @map("employee_id") @db.Uuid
+  type        String // annual | sick | maternity | paternity | unpaid
+  startDate   DateTime  @map("start_date") @db.Date
+  endDate     DateTime  @map("end_date") @db.Date
+  days        Int
+  status      String    @default("pending") // pending | approved | rejected | cancelled
+  reason      String?
+  requestedBy String    @map("requested_by") @db.Uuid
+  decidedBy   String?   @map("decided_by") @db.Uuid
+  decidedAt   DateTime? @map("decided_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, employeeId])
+  @@map("leave_request")
+}
+
+model LeaveBalance {
+  id           String @id @default(uuid()) @db.Uuid
+  tenantId     String @map("tenant_id") @db.Uuid
+  employeeId   String @map("employee_id") @db.Uuid
+  cycleYear    Int    @map("cycle_year")
+  entitledDays Int    @default(28) @map("entitled_days")
+  takenDays    Int    @default(0) @map("taken_days")
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, employeeId, cycleYear])
+  @@index([tenantId])
+  @@map("leave_balance")
+}
+
+model AttendanceRecord {
+  id         String    @id @default(uuid()) @db.Uuid
+  tenantId   String    @map("tenant_id") @db.Uuid
+  employeeId String    @map("employee_id") @db.Uuid
+  workDate   DateTime  @map("work_date") @db.Date
+  clockIn    DateTime  @map("clock_in")
+  clockOut   DateTime? @map("clock_out")
+  minutes    Int?
+  source     String    @default("manual") // kiosk | gps | biometric | manual
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, employeeId, workDate])
+  @@index([tenantId])
+  @@index([tenantId, employeeId])
+  @@map("attendance_record")
+}
+
+model PerformanceReview {
+  id             String    @id @default(uuid()) @db.Uuid
+  tenantId       String    @map("tenant_id") @db.Uuid
+  employeeId     String    @map("employee_id") @db.Uuid
+  cycle          String
+  reviewerId     String    @map("reviewer_id") @db.Uuid
+  rating         Int?
+  strengths      String?
+  improvements   String?
+  status         String    @default("draft") // draft | submitted | acknowledged
+  submittedAt    DateTime? @map("submitted_at")
+  acknowledgedAt DateTime? @map("acknowledged_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, employeeId, cycle])
+  @@index([tenantId])
+  @@index([tenantId, employeeId])
+  @@map("performance_review")
+}
+
+model HseqIncident {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  employeeId   String?  @map("employee_id") @db.Uuid
+  locationCode String   @map("location_code")
+  category     String // injury | near_miss | property | environmental
+  severity     String // low | medium | high | lti
+  description  String
+  occurredOn   DateTime @map("occurred_on") @db.Date
+  status       String   @default("open") // open | investigating | closed
+  reportedBy   String   @map("reported_by") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employee Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@map("hseq_incident")
+}
+
+model PpeIssue {
+  id         String    @id @default(uuid()) @db.Uuid
+  tenantId   String    @map("tenant_id") @db.Uuid
+  employeeId String    @map("employee_id") @db.Uuid
+  item       String
+  issuedOn   DateTime  @map("issued_on") @db.Date
+  expiresOn  DateTime? @map("expires_on") @db.Date
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("ppe_issue")
+}
+
+model MedicalRecord {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  employeeId String   @map("employee_id") @db.Uuid
+  type       String // osha | pre_employment | periodic
+  validFrom  DateTime @map("valid_from") @db.Date
+  validTo    DateTime @map("valid_to") @db.Date
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("medical_record")
+}
+
+model TrainingRecord {
+  id          String    @id @default(uuid()) @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  employeeId  String    @map("employee_id") @db.Uuid
+  course      String
+  provider    String?
+  status      String    @default("planned") // planned | completed | expired
+  completedOn DateTime? @map("completed_on") @db.Date
+  expiresOn   DateTime? @map("expires_on") @db.Date
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("training_record")
+}
+
+model ExactConnection {
+  tenantId     String   @id @map("tenant_id") @db.Uuid
+  accessToken  String?  @map("access_token")
+  refreshToken String?  @map("refresh_token")
+  expiresAt    DateTime? @map("expires_at")
+  division     String?
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("exact_connection")
+}
