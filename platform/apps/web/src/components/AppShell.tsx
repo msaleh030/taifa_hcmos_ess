@@ -11,6 +11,8 @@ interface NavEntry {
 const NAV: NavEntry[] = [
   { to: "/", label: "Dashboard" },
   { to: "/employees", label: "Employees", requires: "employee:read" },
+  { to: "/leave", label: "Leave & Liability", requires: "leave:read" },
+  { to: "/attendance", label: "Attendance" },
   { to: "/payroll", label: "Payroll", requires: "payroll:read" },
   { to: "/audit", label: "Audit", requires: "audit:read" },
 ];

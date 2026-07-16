@@ -70,7 +70,7 @@ async function main(): Promise<void> {
   let seq = 1001;
   for (const e of employees) {
     const employeeNo = makeEmployeeNumber("MWD", seq++);
-    await prisma.employee.upsert({
+    const emp = await prisma.employee.upsert({
       where: { tenantId_employeeNo: { tenantId: tenant.id, employeeNo } },
       update: {},
       create: {
@@ -86,6 +86,21 @@ async function main(): Promise<void> {
         startDate: new Date("2022-01-10"),
         basicSalary: e.salary,
       },
+    });
+    // Seed a current-cycle leave balance for liability calculations.
+    await prisma.leaveBalance.upsert({
+      where: { tenantId_employeeId_cycleYear: { tenantId: tenant.id, employeeId: emp.id, cycleYear: 2026 } },
+      update: {},
+      create: { tenantId: tenant.id, employeeId: emp.id, cycleYear: 2026, entitledDays: 28, takenDays: 6 },
+    });
+  }
+
+  // Link the ESS demo login to Joseph Mlimani's employee record.
+  const joseph = await prisma.employee.findFirst({ where: { tenantId: tenant.id, firstName: "Joseph", lastName: "Mlimani" } });
+  if (joseph) {
+    await prisma.user.update({
+      where: { tenantId_email: { tenantId: tenant.id, email: "employee@taifamining.tz" } },
+      data: { employeeId: joseph.id },
     });
   }
 

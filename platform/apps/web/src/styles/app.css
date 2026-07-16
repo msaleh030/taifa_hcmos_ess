@@ -180,6 +180,29 @@
   gap: 6px;
   margin-top: 12px;
 }
+.row-actions {
+  display: inline-flex;
+  gap: 6px;
+}
+.btn-sm {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+.leave-form {
+  padding: var(--pad);
+}
+.leave-fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+}
+.leave-fields .field {
+  margin-bottom: 0;
+}
+select.input {
+  appearance: none;
+}
 
 /* ── Tables ────────────────────────────────────────────────────────────── */
 .tbl {

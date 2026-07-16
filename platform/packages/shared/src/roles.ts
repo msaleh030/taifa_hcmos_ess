@@ -61,6 +61,10 @@ export type Permission =
   | "leave:read"
   | "leave:request"
   | "leave:approve"
+  | "attendance:read"
+  | "attendance:clock"
+  | "performance:read"
+  | "performance:write"
   | "payroll:read"
   | "payroll:run"
   | "payroll:approve"
@@ -69,13 +73,17 @@ export type Permission =
   | "tenant:admin"
   | "user:admin";
 
-const ALL: Permission[] = [
+export const ALL_PERMISSIONS: Permission[] = [
   "employee:read",
   "employee:write",
   "employee:read:confidential",
   "leave:read",
   "leave:request",
   "leave:approve",
+  "attendance:read",
+  "attendance:clock",
+  "performance:read",
+  "performance:write",
   "payroll:read",
   "payroll:run",
   "payroll:approve",
@@ -92,25 +100,28 @@ const ALL: Permission[] = [
  * `payroll:run` and `payroll:approve` are granted to different roles.
  */
 export const ROLE_PERMISSIONS: Record<RoleCode, Permission[]> = {
-  R01: ["employee:read", "leave:read", "leave:request"],
-  R02: ["employee:read", "leave:read", "leave:request", "leave:approve"],
-  R03: ["employee:read", "leave:read", "leave:approve"],
-  R04: ["employee:read", "leave:read", "leave:approve"],
-  R05: ["employee:read", "leave:read", "leave:approve"],
-  R06: ["employee:read", "employee:write", "employee:read:confidential", "leave:read", "leave:approve"],
-  R07: ["employee:read", "employee:write", "leave:read", "leave:approve"],
+  R01: ["employee:read", "leave:read", "leave:request", "attendance:clock"],
+  R02: ["employee:read", "leave:read", "leave:request", "leave:approve", "attendance:read", "attendance:clock", "performance:read", "performance:write"],
+  R03: ["employee:read", "leave:read", "leave:approve", "attendance:read", "performance:read", "performance:write"],
+  R04: ["employee:read", "leave:read", "leave:approve", "attendance:read", "performance:read", "performance:write"],
+  R05: ["employee:read", "leave:read", "leave:approve", "attendance:read", "performance:read", "performance:write"],
+  R06: ["employee:read", "employee:write", "employee:read:confidential", "leave:read", "leave:approve", "attendance:read", "performance:read", "performance:write"],
+  R07: ["employee:read", "employee:write", "leave:read", "leave:approve", "attendance:read", "performance:read", "performance:write"],
   R08: [
     "employee:read",
     "employee:write",
     "employee:read:confidential",
     "leave:read",
     "leave:approve",
+    "attendance:read",
+    "performance:read",
+    "performance:write",
     "audit:read",
   ],
-  R09: ["employee:read", "employee:read:confidential", "payroll:read", "payroll:run"],
-  R10: ["employee:read", "payroll:read", "payroll:approve"],
-  R11: ["employee:read", "leave:read"],
-  R12: ["employee:read", "payroll:read", "audit:read"],
+  R09: ["employee:read", "employee:read:confidential", "leave:read", "payroll:read", "payroll:run"],
+  R10: ["employee:read", "payroll:read", "payroll:approve", "leave:read"],
+  R11: ["employee:read", "leave:read", "attendance:read"],
+  R12: ["employee:read", "payroll:read", "audit:read", "leave:read", "attendance:read", "performance:read"],
   R13: ["user:admin", "tenant:admin", "integration:manage", "audit:read"],
 };
 

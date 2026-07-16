@@ -106,7 +106,49 @@ export const api = {
   payrollRuns: () => apiFetch<{ data: PayrollRunDto[] }>("/payroll/runs"),
   auditEvents: () => apiFetch<{ data: AuditEventDto[] }>("/audit/events?limit=50"),
   auditVerify: () => apiFetch<{ data: { ok: boolean; count: number; reason?: string } }>("/audit/verify"),
+
+  leaveRequests: () => apiFetch<{ data: LeaveRequestDto[] }>("/leave/requests"),
+  leaveLiability: () => apiFetch<{ data: LeaveLiabilityDto }>("/leave/liability"),
+  createLeave: (body: { type: string; startDate: string; endDate: string; reason?: string }) =>
+    apiFetch<{ data: LeaveRequestDto }>("/leave/requests", { method: "POST", body: JSON.stringify(body) }),
+  decideLeave: (id: string, decision: "approve" | "reject") =>
+    apiFetch<{ data: LeaveRequestDto }>(`/leave/requests/${id}/decide`, { method: "POST", body: JSON.stringify({ decision }) }),
+
+  attendance: () => apiFetch<{ data: AttendanceDto[] }>("/attendance"),
+  clockIn: () => apiFetch<{ data: AttendanceDto }>("/attendance/clock-in", { method: "POST", body: JSON.stringify({ source: "manual" }) }),
+  clockOut: () => apiFetch<{ data: AttendanceDto }>("/attendance/clock-out", { method: "POST", body: JSON.stringify({}) }),
 };
+
+export interface LeaveRequestDto {
+  id: string;
+  employeeId: string;
+  type: string;
+  startDate: string;
+  endDate: string;
+  days: number;
+  status: string;
+  reason: string | null;
+  requestedBy: string;
+  decidedBy: string | null;
+  createdAt: string;
+}
+
+export interface LeaveLiabilityDto {
+  cycleYear: number;
+  employees: number;
+  accruedDays: number;
+  monetisedTZS: number;
+}
+
+export interface AttendanceDto {
+  id: string;
+  employeeId: string;
+  workDate: string;
+  clockIn: string;
+  clockOut: string | null;
+  minutes: number | null;
+  source: string;
+}
 
 export interface EmployeeDto {
   id: string;

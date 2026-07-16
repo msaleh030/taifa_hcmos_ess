@@ -5,6 +5,8 @@ import { LoginPage } from "./pages/Login.js";
 import { DashboardPage } from "./pages/Dashboard.js";
 import { EmployeesPage } from "./pages/Employees.js";
 import { PayrollPage } from "./pages/Payroll.js";
+import { LeavePage } from "./pages/Leave.js";
+import { AttendancePage } from "./pages/Attendance.js";
 import { AuditPage } from "./pages/Audit.js";
 import type { ReactElement } from "react";
 
@@ -28,6 +30,8 @@ export function App() {
       >
         <Route index element={<DashboardPage />} />
         <Route path="/employees" element={<EmployeesPage />} />
+        <Route path="/leave" element={<LeavePage />} />
+        <Route path="/attendance" element={<AttendancePage />} />
         <Route path="/payroll" element={<PayrollPage />} />
         <Route path="/audit" element={<AuditPage />} />
       </Route>

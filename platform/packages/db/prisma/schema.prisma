@@ -22,12 +22,15 @@ model Tenant {
   name      String
   createdAt DateTime @default(now()) @map("created_at")
 
-  users        User[]
-  employees    Employee[]
-  departments  Department[]
-  payrollRuns  PayrollRun[]
-  auditEvents  AuditEvent[]
-  exactConn    ExactConnection?
+  users         User[]
+  employees     Employee[]
+  departments   Department[]
+  payrollRuns   PayrollRun[]
+  auditEvents   AuditEvent[]
+  exactConn     ExactConnection?
+  leaveRequests LeaveRequest[]
+  leaveBalances LeaveBalance[]
+  attendance    AttendanceRecord[]
 
   @@map("tenant")
 }
@@ -43,9 +46,11 @@ model User {
   disabled       Boolean   @default(false)
   failedAttempts Int       @default(0) @map("failed_attempts")
   lockedUntil    DateTime? @map("locked_until")
+  employeeId     String?   @map("employee_id") @db.Uuid
   createdAt      DateTime  @default(now()) @map("created_at")
 
   tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employee      Employee?      @relation(fields: [employeeId], references: [id], onDelete: SetNull)
   roles         UserRole[]
   refreshTokens RefreshToken[]
 
@@ -119,9 +124,13 @@ model Employee {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  department Department? @relation(fields: [departmentId], references: [id])
-  payslips   Payslip[]
+  tenant        Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  department    Department?        @relation(fields: [departmentId], references: [id])
+  payslips      Payslip[]
+  users         User[]
+  leaveRequests LeaveRequest[]
+  leaveBalances LeaveBalance[]
+  attendance    AttendanceRecord[]
 
   @@unique([tenantId, employeeNo])
   @@index([tenantId])
@@ -194,6 +203,65 @@ model AuditEvent {
   @@unique([tenantId, seq])
   @@index([tenantId])
   @@map("audit_event")
+}
+
+model LeaveRequest {
+  id          String    @id @default(uuid()) @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  employeeId  String    @map("employee_id") @db.Uuid
+  type        String // annual | sick | maternity | paternity | unpaid
+  startDate   DateTime  @map("start_date") @db.Date
+  endDate     DateTime  @map("end_date") @db.Date
+  days        Int
+  status      String    @default("pending") // pending | approved | rejected | cancelled
+  reason      String?
+  requestedBy String    @map("requested_by") @db.Uuid
+  decidedBy   String?   @map("decided_by") @db.Uuid
+  decidedAt   DateTime? @map("decided_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, employeeId])
+  @@map("leave_request")
+}
+
+model LeaveBalance {
+  id           String @id @default(uuid()) @db.Uuid
+  tenantId     String @map("tenant_id") @db.Uuid
+  employeeId   String @map("employee_id") @db.Uuid
+  cycleYear    Int    @map("cycle_year")
+  entitledDays Int    @default(28) @map("entitled_days")
+  takenDays    Int    @default(0) @map("taken_days")
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, employeeId, cycleYear])
+  @@index([tenantId])
+  @@map("leave_balance")
+}
+
+model AttendanceRecord {
+  id         String    @id @default(uuid()) @db.Uuid
+  tenantId   String    @map("tenant_id") @db.Uuid
+  employeeId String    @map("employee_id") @db.Uuid
+  workDate   DateTime  @map("work_date") @db.Date
+  clockIn    DateTime  @map("clock_in")
+  clockOut   DateTime? @map("clock_out")
+  minutes    Int?
+  source     String    @default("manual") // kiosk | gps | biometric | manual
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, employeeId, workDate])
+  @@index([tenantId])
+  @@index([tenantId, employeeId])
+  @@map("attendance_record")
 }
 
 model ExactConnection {

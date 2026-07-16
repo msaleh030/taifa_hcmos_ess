@@ -8,6 +8,8 @@ import { authRoutes } from "./routes/auth.js";
 import { employeeRoutes } from "./routes/employees.js";
 import { payrollRoutes } from "./routes/payroll.js";
 import { labourRoutes } from "./routes/labour.js";
+import { leaveRoutes } from "./routes/leave.js";
+import { attendanceRoutes } from "./routes/attendance.js";
 import { auditRoutes } from "./routes/audit.js";
 import { integrationRoutes } from "./routes/integrations.js";
 
@@ -34,6 +36,8 @@ export async function buildApp(): Promise<FastifyInstance> {
       await employeeRoutes(api);
       await payrollRoutes(api);
       await labourRoutes(api);
+      await leaveRoutes(api);
+      await attendanceRoutes(api);
       await auditRoutes(api);
       await integrationRoutes(api);
     },

@@ -166,4 +166,44 @@ describe.skipIf(!run)("HCMOS API integration", () => {
     const res = (await post("/api/labour/severance", { basicMonthly: 1_300_000, monthsService: 60 }, payroll)).json();
     expect(res.data.amount).toBe(1_750_000); // 50,000/day × 7 × 5 years
   });
+
+  it("runs the leave request → approval workflow with maker≠checker", async () => {
+    // Employee (linked to an employee record) submits a request.
+    const employee = await fullLogin("employee@taifamining.tz");
+    const created = await post(
+      "/api/leave/requests",
+      { type: "annual", startDate: "2027-03-02", endDate: "2027-03-06" },
+      employee,
+    );
+    expect(created.statusCode).toBe(201);
+    const reqId = created.json().data.id;
+    expect(created.json().data.days).toBe(5);
+
+    // An HR approver (different user) approves it.
+    const hr = await fullLogin("hrhead@taifamining.tz");
+    const decided = await post(`/api/leave/requests/${reqId}/decide`, { decision: "approve" }, hr);
+    expect(decided.statusCode).toBe(200);
+    expect(decided.json().data.status).toBe("approved");
+
+    // Liability endpoint returns a monetised total.
+    const liability = (await get("/api/leave/liability", hr)).json().data;
+    expect(liability.monetisedTZS).toBeGreaterThan(0);
+  });
+
+  it("records attendance via clock-in then clock-out", async () => {
+    const employee = await fullLogin("employee@taifamining.tz");
+    const inRes = await post("/api/attendance/clock-in", { source: "kiosk" }, employee);
+    // 201 first time; 409 if a prior run already clocked in today.
+    expect([201, 409]).toContain(inRes.statusCode);
+
+    const outRes = await post("/api/attendance/clock-out", {}, employee);
+    expect([200, 409]).toContain(outRes.statusCode);
+    if (outRes.statusCode === 200) {
+      expect(outRes.json().data.clockOut).toBeTruthy();
+      expect(outRes.json().data.minutes).toBeGreaterThanOrEqual(0);
+    }
+
+    const list = (await get("/api/attendance", employee)).json().data;
+    expect(Array.isArray(list)).toBe(true);
+  });
 });
