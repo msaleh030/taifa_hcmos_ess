@@ -10,6 +10,8 @@ import { AttendancePage } from "./pages/Attendance.js";
 import { PerformancePage } from "./pages/Performance.js";
 import { OrgPage } from "./pages/Org.js";
 import { HseqPage } from "./pages/Hseq.js";
+import { TrainingPage } from "./pages/Training.js";
+import { KpiPage } from "./pages/Kpi.js";
 import { AuditPage } from "./pages/Audit.js";
 import type { ReactElement } from "react";
 
@@ -38,6 +40,8 @@ export function App() {
         <Route path="/performance" element={<PerformancePage />} />
         <Route path="/org" element={<OrgPage />} />
         <Route path="/hseq" element={<HseqPage />} />
+        <Route path="/training" element={<TrainingPage />} />
+        <Route path="/kpi" element={<KpiPage />} />
         <Route path="/payroll" element={<PayrollPage />} />
         <Route path="/audit" element={<AuditPage />} />
       </Route>

@@ -144,6 +144,12 @@ async function main(): Promise<void> {
     if (grace && hrUser) {
       await prisma.performanceReview.create({ data: { tenantId: tenant.id, employeeId: grace.id, cycle: "2026-Q2", reviewerId: hrUser.id, rating: 5, strengths: "Excellent team leadership", status: "acknowledged", submittedAt: D("2026-06-28"), acknowledgedAt: D("2026-06-30") } });
     }
+    // Training records (drive training compliance + KPI).
+    if (joseph && grace) {
+      await prisma.trainingRecord.create({ data: { tenantId: tenant.id, employeeId: joseph.id, course: "Working at Heights", provider: "OSHA", status: "completed", completedOn: D("2026-02-10"), expiresOn: D("2027-02-10") } });
+      await prisma.trainingRecord.create({ data: { tenantId: tenant.id, employeeId: joseph.id, course: "Defensive Driving", provider: "NIT", status: "planned" } });
+      await prisma.trainingRecord.create({ data: { tenantId: tenant.id, employeeId: grace.id, course: "First Aid Level 2", provider: "Red Cross", status: "completed", completedOn: D("2026-03-05"), expiresOn: D("2026-09-05") } });
+    }
     if (hrUser) {
       await prisma.hseqIncident.create({ data: { tenantId: tenant.id, locationCode: "DAR", category: "injury", severity: "lti", description: "Hand laceration at Dar yard", occurredOn: D("2026-06-19"), status: "closed", reportedBy: hrUser.id } });
       await prisma.hseqIncident.create({ data: { tenantId: tenant.id, locationCode: "MWD", category: "near_miss", severity: "medium", description: "Vehicle reversing near pedestrians", occurredOn: D("2026-07-11"), status: "investigating", reportedBy: hrUser.id } });

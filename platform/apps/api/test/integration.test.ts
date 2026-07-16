@@ -278,4 +278,39 @@ describe.skipIf(!run)("HCMOS API integration", () => {
     expect(patched.statusCode).toBe(200);
     expect(patched.json().data.status).toBe("closed");
   });
+
+  it("adds a training record and reports compliance", async () => {
+    const hr = await fullLogin("hrhead@taifamining.tz"); // training:write
+    const employees = (await get("/api/employees", hr)).json().data;
+    const emp = employees[0];
+    const created = await post("/api/training", { employeeId: emp.id, course: "Fire Marshal", provider: "OSHA" }, hr);
+    expect(created.statusCode).toBe(201);
+    const id = created.json().data.id;
+
+    const completed = await patch(`/api/training/${id}`, { status: "completed", completedOn: "2026-07-15" }, hr);
+    expect(completed.statusCode).toBe(200);
+    expect(completed.json().data.status).toBe("completed");
+
+    const summary = (await get("/api/training/summary", hr)).json().data;
+    expect(summary.total).toBeGreaterThanOrEqual(1);
+    expect(summary.completed).toBeGreaterThanOrEqual(1);
+    expect(summary.compliancePct).toBeGreaterThanOrEqual(0);
+  });
+
+  it("computes the KPI scorecard across modules", async () => {
+    const hr = await fullLogin("hrhead@taifamining.tz"); // kpi:read
+    const kpis = (await get("/api/kpi/scorecard", hr)).json().data;
+    expect(Array.isArray(kpis)).toBe(true);
+    const headcount = kpis.find((k: { key: string }) => k.key === "headcount");
+    expect(headcount.value).toBeGreaterThan(0);
+    // Statutory KPI is derived from the payroll engine and must be positive.
+    const statutory = kpis.find((k: { key: string }) => k.key === "statutory");
+    expect(statutory.value).toBeGreaterThan(0);
+    expect([...new Set(kpis.map((k: { category: string }) => k.category))].length).toBeGreaterThanOrEqual(3);
+
+    // A plain employee lacks kpi:read.
+    const employee = await fullLogin("employee@taifamining.tz");
+    const denied = await get("/api/kpi/scorecard", employee);
+    expect(denied.statusCode).toBe(403);
+  });
 });

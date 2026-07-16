@@ -13,6 +13,8 @@ import { attendanceRoutes } from "./routes/attendance.js";
 import { performanceRoutes } from "./routes/performance.js";
 import { orgRoutes } from "./routes/org.js";
 import { hseqRoutes } from "./routes/hseq.js";
+import { trainingRoutes } from "./routes/training.js";
+import { kpiRoutes } from "./routes/kpi.js";
 import { auditRoutes } from "./routes/audit.js";
 import { integrationRoutes } from "./routes/integrations.js";
 
@@ -44,6 +46,8 @@ export async function buildApp(): Promise<FastifyInstance> {
       await performanceRoutes(api);
       await orgRoutes(api);
       await hseqRoutes(api);
+      await trainingRoutes(api);
+      await kpiRoutes(api);
       await auditRoutes(api);
       await integrationRoutes(api);
     },

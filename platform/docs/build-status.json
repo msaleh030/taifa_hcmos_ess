@@ -38,8 +38,8 @@
       "name": "Performance & Development",
       "modules": [
         { "key": "performance", "name": "Performance appraisals", "status": "done", "db": true, "api": true, "web": true, "tests": true, "note": "Draft→submit→acknowledge, ratings, ESS acknowledgement" },
-        { "key": "training", "name": "Training & competency", "status": "in_progress", "db": true, "api": false, "web": false, "tests": false, "note": "Schema in place; API + web pending" },
-        { "key": "kpi", "name": "KPI scorecard", "status": "planned", "db": false, "api": false, "web": false, "tests": false, "note": "Group & site KPIs, turnover, cost ratios" }
+        { "key": "training", "name": "Training & competency", "status": "done", "db": true, "api": true, "web": true, "tests": true, "note": "Courses, completion, expiry & compliance %" },
+        { "key": "kpi", "name": "KPI scorecard", "status": "done", "db": false, "api": true, "web": true, "tests": true, "note": "Live cross-module KPIs with RAG vs targets" }
       ]
     },
     {

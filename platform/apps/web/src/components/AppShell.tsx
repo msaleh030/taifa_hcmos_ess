@@ -14,8 +14,10 @@ const NAV: NavEntry[] = [
   { to: "/leave", label: "Leave & Liability", requires: "leave:read" },
   { to: "/attendance", label: "Attendance" },
   { to: "/performance", label: "Performance", requires: "performance:read" },
+  { to: "/training", label: "Training", requires: "training:read" },
   { to: "/org", label: "Organization", requires: "employee:read" },
   { to: "/hseq", label: "HSEQ", requires: "hseq:read" },
+  { to: "/kpi", label: "KPI Scorecard", requires: "kpi:read" },
   { to: "/payroll", label: "Payroll", requires: "payroll:read" },
   { to: "/audit", label: "Audit", requires: "audit:read" },
 ];

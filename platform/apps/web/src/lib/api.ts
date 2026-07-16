@@ -132,6 +132,15 @@ export const api = {
   createDept: (body: { name: string; code?: string; parentId?: string; managerId?: string }) =>
     apiFetch<{ data: DeptDto }>("/org/departments", { method: "POST", body: JSON.stringify(body) }),
 
+  training: () => apiFetch<{ data: TrainingDto[] }>("/training"),
+  trainingSummary: () => apiFetch<{ data: TrainingSummaryDto }>("/training/summary"),
+  createTraining: (body: { employeeId: string; course: string; provider?: string; status?: string; completedOn?: string; expiresOn?: string }) =>
+    apiFetch<{ data: TrainingDto }>("/training", { method: "POST", body: JSON.stringify(body) }),
+  updateTraining: (id: string, body: { status?: string; completedOn?: string; expiresOn?: string }) =>
+    apiFetch<{ data: TrainingDto }>(`/training/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+
+  kpiScorecard: () => apiFetch<{ data: KpiDto[] }>("/kpi/scorecard"),
+
   hseqIncidents: () => apiFetch<{ data: IncidentDto[] }>("/hseq/incidents"),
   hseqSummary: () => apiFetch<{ data: HseqSummaryDto }>("/hseq/summary"),
   reportIncident: (body: {
@@ -186,6 +195,37 @@ export interface HseqSummaryDto {
   openIncidents: number;
   validMedicalPct: number;
   ppeCompliancePct: number;
+}
+
+export interface TrainingDto {
+  id: string;
+  employeeId: string;
+  course: string;
+  provider: string | null;
+  status: string;
+  completedOn: string | null;
+  expiresOn: string | null;
+  createdAt: string;
+}
+
+export interface TrainingSummaryDto {
+  total: number;
+  completed: number;
+  planned: number;
+  expired: number;
+  expiringSoon: number;
+  compliancePct: number;
+}
+
+export interface KpiDto {
+  category: string;
+  key: string;
+  label: string;
+  value: number;
+  unit?: string;
+  target?: number;
+  goodDirection?: "up" | "down";
+  sub?: string;
 }
 
 export interface LeaveRequestDto {
